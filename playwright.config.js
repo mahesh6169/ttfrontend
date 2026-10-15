@@ -28,7 +28,8 @@ export default defineConfig({
   forbidOnly: true,
   retries: 0,
   timeout: 60_000,
-  reporter: [['list']],
+  // On GitHub CI also annotate each failed test on the pull request.
+  reporter: process.env.CI ? [['list'], ['github']] : [['list']],
   use: {
     baseURL: 'http://localhost:3120',
     trace: 'on-first-retry',
@@ -59,7 +60,8 @@ export default defineConfig({
     },
     {
       // Frontend PRODUCTION build (into .next-e2e so the dev server's .next is untouched) on 3120.
-      command: 'npm run build:e2e && npm run start:e2e',
+      // GitHub CI builds in its own step first and sets E2E_SKIP_BUILD, so it only starts here.
+      command: process.env.E2E_SKIP_BUILD ? 'npm run start:e2e' : 'npm run build:e2e && npm run start:e2e',
       url: 'http://localhost:3120',
       env: { ...testEnv, NEXT_DIST_DIR: '.next-e2e', NODE_OPTIONS: '--max-old-space-size=4096' },
       reuseExistingServer: false,

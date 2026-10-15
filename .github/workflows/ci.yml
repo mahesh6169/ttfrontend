@@ -1,0 +1,158 @@
+name: CI
+
+# Runs on every pull request into main, and on main itself after a merge:
+# lint, a production build, and the Playwright browser suite against a
+# backend + Mongo stood up on this runner (never the dev PC, never prod).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # Same folder layout as the dev PC: playwright.config.js and
+      # e2e/global.setup.js find the backend at ../ttbackendflyio.
+      - name: Check out frontend
+        uses: actions/checkout@v4
+        with:
+          path: ttfrontend
+
+      # The backend's main, i.e. what is live (or about to be): a frontend
+      # change that needs new backend code goes green once that is merged.
+      - name: Check out backend
+        uses: actions/checkout@v4
+        with:
+          repository: mahesh6169/ttbackend
+          ref: main
+          path: ttbackendflyio
+
+      # Same Node as local dev (Dockerfile.dev in both repos).
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.7.0
+          cache: npm
+          cache-dependency-path: |
+            ttfrontend/package-lock.json
+            ttbackendflyio/package-lock.json
+
+      # ci, not install: installs exactly what each package-lock.json says.
+      - name: Install frontend dependencies
+        working-directory: ttfrontend
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ttbackendflyio
+        run: npm ci
+
+      - name: Lint
+        working-directory: ttfrontend
+        run: npm run lint
+
+      # The test env files are gitignored; these mirror the local ones. Only
+      # the Stripe test values and the two Google browser test keys are real
+      # (from repo secrets); everything else is a CI dummy. FRONTEND_API_KEY
+      # and NEXT_PUBLIC_FRONTEND_API_KEY must both be test-api-key: the specs
+      # send that key themselves (cleanup and setup calls straight to the API).
+      - name: Write test env files
+        env:
+          STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          TEST_STRIPE_ACCOUNT_ID: ${{ secrets.TEST_STRIPE_ACCOUNT_ID }}
+          STRIPE_TEST_PUBLISHABLE_KEY: ${{ secrets.STRIPE_TEST_PUBLISHABLE_KEY }}
+          RECAPTCHA_TEST_SITE_KEY: ${{ secrets.RECAPTCHA_TEST_SITE_KEY }}
+          GOOGLE_MAPS_TEST_KEY: ${{ secrets.GOOGLE_MAPS_TEST_KEY }}
+        run: |
+          cat > ttbackendflyio/.env.test <<EOF
+          NODE_ENV=test
+          PORT=5100
+          MONGO_URI=mongodb://localhost:27017/tagtelugu_test?replicaSet=rs0
+          JWT_SECRET=ci-only-jwt-secret-not-used-anywhere-else
+          MESSAGE_SECRET_KEY=00000000000000000000000000000000000000000000000000000000000000ff
+          FRONTEND_API_KEY=test-api-key
+          API_KEY_MODE=enforce
+          FRONTEND_URL=http://localhost:3120
+          WEBSITE_URL=http://localhost:3120
+          SENDER_EMAIL=test@example.com
+          NOTIFICATION_PLATFORM_NAME=DesifyTest
+          NOTIFICATION_PLATFORM_TEAM=Desify Test Team
+          RECAPTCHA_SECRET_KEY=ci-placeholder-skipped-when-node-env-is-test
+          TERMS_VERSION=v1.7
+          STRIPE_SECRET_KEY=$STRIPE_TEST_SECRET_KEY
+          STRIPE_WEBHOOK_SECRET=whsec_ci_placeholder
+          TEST_STRIPE_ACCOUNT_ID=$TEST_STRIPE_ACCOUNT_ID
+          EOF
+          IMG=https://res.cloudinary.com/dtvrbdvkx/image/upload/w_1200,h_630,c_fill,f_auto,q_auto/v1770171839/NoImage._eo6juc.jpg
+          OG=https://res.cloudinary.com/dtvrbdvkx/image/upload/w_1200,h_630,c_fill,f_auto,q_auto/v1783923435/SEO_WEBSITE-v1_utr0dt.jpg
+          cat > ttfrontend/.env.test <<EOF
+          NEXT_PUBLIC_API_BASE_URL=http://localhost:5100/api
+          NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:5100
+          NEXT_PUBLIC_FRONTEND_API_KEY=test-api-key
+          NEXT_PUBLIC_RECAPTCHA_SITE_KEY=$RECAPTCHA_TEST_SITE_KEY
+          NEXT_PUBLIC_WEBSITE_URL=http://localhost:3120
+          NEXT_PUBLIC_ALLOW_INDEXING=false
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_TEST_KEY
+          NEXT_PUBLIC_TERMS_VERSION=v1.7
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$STRIPE_TEST_PUBLISHABLE_KEY
+          NEXT_PUBLIC_WEBSITE_NAME=Desify
+          NEXT_PUBLIC_ENABLE_STATE_SELECTION=false
+          NEXT_PUBLIC_FALLBACK_ADVERT_IMAGE_URL=$IMG
+          NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL=$IMG
+          NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL=$IMG
+          NEXT_PUBLIC_FALLBACK_CAMPAIGN_IMAGE_URL=$IMG
+          NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL=$IMG
+          NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_LISTINGS_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_EVENTS_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_TICKETS_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_DEALS_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_THREADS_OG_IMAGE_URL=$OG
+          NEXT_PUBLIC_REVALIDATION_SECRET=ci-only-revalidation-secret
+          EOF
+
+      # The production build the browser suite serves (into .next-e2e, with
+      # the test env inlined). playwright.config.js skips its own build when
+      # E2E_SKIP_BUILD is set, so this runs once and shows as its own step.
+      - name: Build
+        working-directory: ttfrontend
+        run: |
+          set -a; . ./.env.test; set +a
+          npm run build:e2e
+
+      # Same Mongo as compose.yaml, as a single-node replica set "rs0": the app
+      # uses transactions (ticket purchase), which need one.
+      - name: Start Mongo (replica set)
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7.0.14 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            if docker exec mongo mongosh --quiet --eval "try { rs.status().ok } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }).ok }; db.hello().isWritablePrimary || quit(1)" > /dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "mongo never became primary" >&2
+          docker logs mongo >&2
+          exit 1
+
+      - name: Install Playwright browser
+        working-directory: ttfrontend
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.js starts the backend (e2e-boot.js, :5100) and the
+      # built frontend (:3120) itself; global.setup.js seeds the test DB.
+      - name: Browser tests
+        working-directory: ttfrontend
+        env:
+          E2E_SKIP_BUILD: '1'
+        run: npm run test:e2e
+
+      - name: Upload Playwright results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: ttfrontend/test-results/
+          retention-days: 7

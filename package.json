@@ -6,7 +6,7 @@
     "dev": "NODE_OPTIONS=--max-old-space-size=3072 next dev --turbopack -p 3020",
     "build": "next build",
     "start": "next start -p 3020",
-    "lint": "next lint",
+    "lint": "eslint .",
     "build:e2e": "NEXT_DIST_DIR=.next-e2e NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start:e2e": "NEXT_DIST_DIR=.next-e2e next start -p 3120",
     "test:e2e": "playwright test"
