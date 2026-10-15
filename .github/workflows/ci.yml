@@ -70,6 +70,7 @@ jobs:
           PORT=5100
           MONGO_URI=mongodb://localhost:27017/tagtelugu_test?replicaSet=rs0
           JWT_SECRET=ci-only-jwt-secret-not-used-anywhere-else
+          MESSAGE_SECRET_KEY=00000000000000000000000000000000000000000000000000000000000000ff
           FRONTEND_API_KEY=ci-only-frontend-api-key
           API_KEY_MODE=enforce
           FRONTEND_URL=http://localhost:3120
