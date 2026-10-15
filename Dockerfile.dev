@@ -13,6 +13,6 @@ USER node
 
 EXPOSE 3020
 
-# package-lock.json is gitignored in this repo: use it (npm ci) when present,
-# otherwise npm install (fresh clone). Reinstall only when it changes.
+# package-lock.json is committed (since feature 1001): use it (npm ci) when
+# present, otherwise npm install. Reinstall only when it changes.
 CMD ["sh", "-c", "if [ -f package-lock.json ]; then h=$(sha1sum package-lock.json | cut -d' ' -f1); [ \"$(cat node_modules/.lockhash 2>/dev/null)\" = \"$h\" ] || { npm ci && echo \"$h\" > node_modules/.lockhash; }; else npm install; fi; exec npm run dev"]

@@ -26,7 +26,6 @@ pnpm-debug.log*
 debug.log
 
 # 🚀 Ignore Lock Files (Optional)
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
