@@ -216,7 +216,8 @@ test.describe('sales closed', () => {
     await section.getByText('E2E Past Featured Paid Fest').click();
     await expect(page.getByRole('heading', { name: 'E2E Past Featured Paid Fest' })).toBeVisible({ timeout: 20_000 });
     const closedButton = page.getByRole('button', { name: 'Sales Closed' });
-    await expect(closedButton).toBeVisible();
+    // The button renders once the client has loaded the event's sales state, after the heading.
+    await expect(closedButton).toBeVisible({ timeout: 15_000 });
     await expect(closedButton).toBeDisabled();
   });
 
