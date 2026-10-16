@@ -1,5 +1,6 @@
 // Shared E2E helpers: read the seeded ids and verify DB state without adding any route to the
 // served app (a backend script queries the same test DB in a separate process).
+import { expect } from '@playwright/test';
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -65,4 +66,75 @@ export function dbPackTags(eventId) {
   const m = out.match(/PACKIDS=(\[.*\])/);
   if (!m) throw new Error(`introspect.js gave no PACKIDS for ${eventId}:\n${out}`);
   return JSON.parse(m[1]);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Browser helpers shared by the event specs (moved here from the per-spec copies).
+
+export const API = 'http://localhost:5100/api';
+export const KEY = { 'x-api-key': 'test-api-key' };
+
+// Start from a clean slate: delete the member's leftover reservation (if any) for an event.
+export async function clearReservation(page, eventId) {
+  const res = await page.request.get(`${API}/events/${eventId}/reservation`, { headers: KEY });
+  if (res.ok()) {
+    const body = await res.json();
+    if (body?.reservation?._id) {
+      await page.request.delete(`${API}/events/${eventId}/reservation/${body.reservation._id}`, { headers: KEY });
+    }
+  }
+}
+
+// Open the edit wizard for an event (as its organiser) and wait for Step 1.
+export async function openEdit(page, id) {
+  await page.goto(`/events/edit/${id}`);
+  await expect(page.getByPlaceholder('Enter event title')).toBeVisible({ timeout: 20_000 });
+}
+
+// Reach the seats page with `qty` Standard tickets held.
+export async function openSeats(page, eventId, qty = 1) {
+  await page.goto(`/events/tickets/${eventId}`);
+  for (let i = 0; i < qty; i++) {
+    await page.getByRole('button', { name: 'Add one Standard' }).click();
+  }
+  await expect(page.getByText(new RegExp(`${qty} ticket${qty === 1 ? '' : 's'} selected`)))
+    .toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: 'Select Seats' }).click();
+  await expect(page).toHaveURL(new RegExp(`/events/seats/${eventId}`), { timeout: 15_000 });
+  await expect(page.getByTestId('stage-bar')).toBeVisible({ timeout: 20_000 });
+}
+
+// Reach the checkout of a NON-seated paid event with `qty` Standard tickets.
+export async function gotoCheckoutNonSeated(page, eventId, qty = 1) {
+  await page.goto(`/events/tickets/${eventId}`);
+  for (let i = 0; i < qty; i++) {
+    await page.getByRole('button', { name: 'Add one Standard' }).click();
+  }
+  await expect(page.getByText(new RegExp(`${qty} ticket${qty === 1 ? '' : 's'} selected`))).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: 'Purchase Tickets' }).click();
+  await expect(page).toHaveURL(new RegExp(`/events/checkout/${eventId}`), { timeout: 15_000 });
+}
+
+// Fill the checkout buyer details and tick every consent checkbox.
+export async function fillBuyer(page, email = 'buyer-e2e@test.dev') {
+  await page.getByPlaceholder('First name').fill('Buyer');
+  await page.getByPlaceholder('Last name').fill('Tester');
+  await page.getByPlaceholder('Email address').fill(email);
+  await page.getByPlaceholder('Phone number').fill('0412345678');
+  for (const cb of await page.getByRole('checkbox').all()) {
+    await cb.check().catch(() => {});
+  }
+}
+
+// On the checkout Payment step: fill Stripe's 4242 test card (single CardElement iframe), pay, and
+// wait for the success screen.
+export async function payWith4242(page) {
+  const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
+  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
+  await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
+  await stripe.getByPlaceholder('CVC').fill('123');
+  await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+
+  await page.getByRole('button', { name: /Complete Payment/ }).click();
+  await expect(page.getByText('Payment Successful!')).toBeVisible({ timeout: 45_000 });
 }
