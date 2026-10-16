@@ -44,6 +44,3 @@ pnpm-lock.yaml
 # PostCSS / Tailwind cache
 .postcssrc
 .tailwindcache/
-
-# Throwaway design preview pages (local only)
-app/preview/
