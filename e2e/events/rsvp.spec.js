@@ -35,10 +35,10 @@ test('a guest RSVPs to a free event end to end', async ({ page }) => {
 test.describe('as a member', () => {
   test.use({ storageState: 'e2e/.auth/member.json' });
 
-  test('a member registers for free events without the guest fork, with a sticky bar, the questions card and gated Register', async ({ page }) => {
+  test('a member registers for a free event without the guest fork', async ({ page }) => {
     const seed = readSeed();
 
-    // 1. Straight from the event page to the RSVP page - no email/reCAPTCHA fork.
+    // Straight from the event page to the RSVP page - no email/reCAPTCHA fork.
     await page.goto(`/events/views/${seed.freeEventId}`);
     // Let the on-load validate call settle so the member is recognised.
     await page.waitForLoadState('networkidle');
@@ -49,8 +49,11 @@ test.describe('as a member', () => {
     await page.getByRole('button', { name: 'Register' }).click();
     await expect(page.getByText('Registration successful')).toBeVisible({ timeout: 20_000 });
     expect(dbCount('freeTickets', seed.freeEventId)).toBeGreaterThanOrEqual(1);
+  });
 
-    // 2. On mobile the bottom nav is hidden and a sticky bar shows "N attendees" + Register.
+  // One page load per test: reloading the RSVP page after a viewport switch never reached networkidle on CI.
+  test('on a phone the RSVP page hides the bottom nav and shows a sticky bar with the attendee count and Register', async ({ page }) => {
+    const seed = readSeed();
     await page.setViewportSize(MOBILE);
     await page.goto(`/events/rsvp/${seed.rsvpUiEventId}`);
     await page.waitForLoadState('networkidle');
@@ -59,15 +62,16 @@ test.describe('as a member', () => {
     await expect(bar).toBeVisible();
     await expect(bar).toContainText(/attendee/i);
     await expect(bar.locator('[data-testid="rsvp-register"]')).toBeVisible();
+  });
 
-    // 3. Back on desktop: custom questions sit in the shared "Attendee Information" card.
-    await page.setViewportSize({ width: 1280, height: 720 });
+  test('custom questions sit in the Attendee Information card, and Register stays greyed until the required info is filled, then registers', async ({ page }) => {
+    const seed = readSeed();
     await page.goto(`/events/rsvp/${seed.rsvpUiEventId}`);
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('heading', { name: 'Attendee Information' })).toBeVisible();
     await expect(page.locator('[data-attendee-section]')).toContainText('Dietary needs');
 
-    // 4. Register is greyed with a reason until the required info is complete, then enables.
+    // Register is greyed with a reason until the required info is complete, then enables.
     const register = page.locator('[data-testid="rsvp-register"]');
     await expect(register).toBeDisabled();
     await expect(register).toContainText(/Fill Required Info/i);
@@ -77,7 +81,7 @@ test.describe('as a member', () => {
     await expect(register).toBeEnabled();
     await expect(register).toContainText(/^Register$/);
 
-    // 5. Submit end to end under the new layout.
+    // Submit end to end under the new layout.
     await register.click();
     await expect(page.getByText('Registration successful')).toBeVisible({ timeout: 20_000 });
     expect(dbCount('freeTickets', seed.rsvpUiEventId)).toBeGreaterThanOrEqual(1);

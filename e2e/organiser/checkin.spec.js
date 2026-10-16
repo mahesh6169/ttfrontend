@@ -428,16 +428,19 @@ test.describe('paid check-in', () => {
     await expect(page.getByTestId('checkinpaid-stat-cancelled')).toHaveText('1');
   });
 
-  test('Scan QR opens the scanner, Back closes it, and it auto-closes after 60s with no scans', async ({ page }) => {
+  test('Scan QR opens the scanner and Back closes it', async ({ page }) => {
     await gotoView(page);
-    await page.clock.install(); // control timers set from here on (the scanner's idle countdown)
-
     await page.getByTestId('checkinpaid-scan').click();
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toBeVisible({ timeout: 20_000 });
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toHaveCount(0);
+  });
 
-    // Reopen and leave it idle: fast-forward past 60s -> the scanner closes back to the list.
+  // Kept separate from the open/close test: fast-forwarding after a close-and-reopen trips the
+  // closed scanner's leftover timers (qr-reader element gone).
+  test('the scanner auto-closes back to the list after 60s with no scans', async ({ page }) => {
+    await gotoView(page);
+    await page.clock.install(); // control timers set from here on (the scanner's idle countdown)
     await page.getByTestId('checkinpaid-scan').click();
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toBeVisible({ timeout: 20_000 });
     await page.clock.fastForward(61_000);
