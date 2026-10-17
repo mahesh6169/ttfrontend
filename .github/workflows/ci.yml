@@ -1,13 +1,15 @@
 name: CI
 
-# Runs on every pull request into main, and on main itself after a merge:
-# lint, a production build, and the Playwright browser suite against a
-# backend + Mongo stood up on this runner (never the dev PC, never prod).
+# Runs on every pull request into main, on main itself after a merge, and by
+# hand (Actions tab -> CI -> Run workflow): lint, a production build, and the
+# Playwright browser suite against a backend + Mongo stood up on this runner
+# (never the dev PC, never prod).
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   check:
@@ -17,10 +19,13 @@ jobs:
     steps:
       # Same folder layout as the dev PC: playwright.config.js and
       # e2e/global.setup.js find the backend at ../ttbackendflyio.
+      # Full history so the slow-SEO step below can diff a pull request
+      # against its base branch.
       - name: Check out frontend
         uses: actions/checkout@v4
         with:
           path: ttfrontend
+          fetch-depth: 0
 
       # The backend's main, i.e. what is live (or about to be): a frontend
       # change that needs new backend code goes green once that is merged.
@@ -141,13 +146,89 @@ jobs:
         working-directory: ttfrontend
         run: npx playwright install --with-deps chromium
 
+      # Slow SEO checks (tests tagged @slow, e2e/seo/environment.spec.js): three
+      # extra production builds proving search engines index desify.com.au and
+      # nothing else. ~3+ minutes, so:
+      #   push to main, manual run      -> always run them
+      #   pull request                  -> run them only if the PR changes a file
+      #                                    that decides search-engine indexing
+      # Trigger paths (regexes below, matched against the PR's changed files):
+      #   utils/seo/                     indexing policy (resolveIndexingPolicy)
+      #   utils/slugUtils.js             canonical and sitemap URLs
+      #   app/robots.js                  robots.txt
+      #   app/sitemap*.xml/              sitemap index and child sitemaps
+      #   app/layout.jsx, app/page.jsx   root robots/canonical metadata, homepage
+      #   vertical landing pages and their layouts (events, listings, deals,
+      #     threads, coupons, tickets) - each sets robots from the policy
+      #   vertical detail pages (generateMetadata: title, description, canonical)
+      #   app/events/(with-ads)/by/[slug]/page.jsx, app/blog/[slug]/page.jsx
+      #   next.config.mjs, middleware.*  headers/redirects that could carry robots
+      #   e2e/seo/environment.spec.js    the slow checks themselves
+      #   .github/workflows/ci.yml       this file (also sets NEXT_PUBLIC_ALLOW_INDEXING)
+      # If the diff cannot be worked out, the slow checks run (fail safe).
+      - name: Decide whether to run the slow SEO checks
+        id: slowseo
+        working-directory: ttfrontend
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          decide() {
+            echo "run=$1" >> "$GITHUB_OUTPUT"
+            echo "Slow SEO checks: $2"
+            echo "Slow SEO checks (@slow, e2e/seo/environment.spec.js): $2" >> "$GITHUB_STEP_SUMMARY"
+          }
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            decide true "WILL RUN - event is $EVENT_NAME (always run on push to main and manual runs)."
+            exit 0
+          fi
+          if ! changed=$(git diff --name-only "origin/$BASE_REF...HEAD"); then
+            decide true "WILL RUN - could not diff against origin/$BASE_REF, running them to be safe."
+            exit 0
+          fi
+          cat > "$RUNNER_TEMP/seo-trigger-paths.txt" <<'EOF'
+          ^utils/seo/
+          ^utils/slugUtils\.js$
+          ^app/robots\.js$
+          ^app/sitemap[^/]*\.xml/
+          ^app/layout\.jsx$
+          ^app/page\.jsx$
+          ^app/(events|listings|deals|threads)/\(with-ads\)/(page|layout)\.jsx$
+          ^app/coupons/(page|layout)\.jsx$
+          ^app/tickets/page\.jsx$
+          ^app/(events|listings|threads)/\(with-ads\)/\[slug\]/page\.jsx$
+          ^app/deals/\(with-ads\)/\[slugId\]/page\.jsx$
+          ^app/coupons/\[slug\]/page\.jsx$
+          ^app/events/\(with-ads\)/by/\[slug\]/page\.jsx$
+          ^app/blog/\[slug\]/page\.jsx$
+          ^next\.config\.mjs$
+          ^middleware\.(js|mjs|ts)$
+          ^e2e/seo/environment\.spec\.js$
+          ^\.github/workflows/ci\.yml$
+          EOF
+          sed -i 's/^ *//' "$RUNNER_TEMP/seo-trigger-paths.txt"
+          hits=$(printf '%s\n' "$changed" | grep -E -f "$RUNNER_TEMP/seo-trigger-paths.txt" || true)
+          if [ -n "$hits" ]; then
+            decide true "WILL RUN - this pull request changes files that decide search-engine indexing: $(echo "$hits" | tr '\n' ' ')"
+          else
+            decide false "SKIPPED - this pull request changes none of the files that decide search-engine indexing (they run on every push to main)."
+          fi
+
       # playwright.config.js starts the backend (e2e-boot.js, :5100) and the
       # built frontend (:3120) itself; global.setup.js seeds the test DB.
       - name: Browser tests
         working-directory: ttfrontend
         env:
           E2E_SKIP_BUILD: '1'
-        run: npm run test:e2e
+          RUN_SLOW_SEO: ${{ steps.slowseo.outputs.run }}
+        run: |
+          if [ "$RUN_SLOW_SEO" = "true" ]; then
+            echo "Running the full suite, including the slow SEO checks (@slow)."
+            npm run test:e2e
+          else
+            echo "Running the suite WITHOUT the slow SEO checks (--grep-invert @slow) - see the step above for why."
+            npm run test:e2e -- --grep-invert @slow
+          fi
 
       - name: Upload Playwright results on failure
         if: failure()
