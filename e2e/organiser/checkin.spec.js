@@ -436,14 +436,17 @@ test.describe('paid check-in', () => {
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toHaveCount(0);
   });
 
-  // Kept separate from the open/close test: fast-forwarding after a close-and-reopen trips the
-  // closed scanner's leftover timers (qr-reader element gone).
   test('the scanner auto-closes back to the list after 60s with no scans', async ({ page }) => {
     await gotoView(page);
     await page.clock.install(); // control timers set from here on (the scanner's idle countdown)
     await page.getByTestId('checkinpaid-scan').click();
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toBeVisible({ timeout: 20_000 });
-    await page.clock.fastForward(61_000);
+    // Let the scanner's 100ms start timer run and the widget build BEFORE jumping 60s. One 61s jump
+    // fired the start timer and the idle close together, and html5-qrcode intermittently threw
+    // "HTML Element with id=qr-reader not found" out of fastForward.
+    await page.clock.runFor(1_000);
+    await expect(page.locator('#qr-reader > *').first()).toBeAttached({ timeout: 10_000 });
+    await page.clock.fastForward(60_000);
     await expect(page.getByRole('heading', { name: 'Scan QR Code' })).toHaveCount(0);
     await expect(page.getByTestId('checkinpaid-scan')).toBeVisible();
   });
