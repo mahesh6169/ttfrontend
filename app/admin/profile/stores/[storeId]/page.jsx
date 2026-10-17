@@ -53,23 +53,7 @@ export default function EditStorePage() {
       });
 
       if (response.data.success) {
-        // Revalidate all campaigns for this store (for WhatsApp sharing metadata)
-        if (campaigns.length > 0) {
-          try {
-            const frontendUrl = window.location.origin;
-            const revalidatePromises = campaigns.map(campaign => 
-              fetch(`${frontendUrl}/api/revalidate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tag: `campaign-${campaign.slug}` })
-              })
-            );
-            await Promise.all(revalidatePromises);
-          } catch (error) {
-            console.error('Failed to revalidate campaign metadata:', error);
-          }
-        }
-        
+        // The backend refreshes this store's campaign share previews on save
         toast.success('Store updated successfully!');
         router.push('/admin/profile/stores');
       }

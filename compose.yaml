@@ -18,6 +18,9 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     init: true
+    environment:
+      # Local-only throwaway secret for app/api/revalidate (must match ../ttbackendflyio/compose.yaml).
+      REVALIDATION_SECRET: local-only-revalidation-secret
     volumes:
       - .:/app
       - tt-frontend-node-modules:/app/node_modules

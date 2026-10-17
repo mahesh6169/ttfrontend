@@ -1,5 +1,5 @@
 // Detail-page metadata: titles and meta descriptions per vertical, the events canonical grouping
-// for multi-part events, and the organiser page share card.
+// for multi-part events, the organiser page share card, and the share-preview refresh address.
 // Plans: featureplans/events-seo-detail.md, featureplans/fix-shared-seo-metadata.md,
 // featureplans/events-seo-canonical.md, featureplans/events-organiser-share-meta.md.
 import { test, expect } from '@playwright/test';
@@ -164,4 +164,35 @@ test('an organiser with custom share fields uses them in the share card and the 
 
   // The share title wins over the event's own organiser name, so the on-screen heading reads it.
   await expect(page.getByRole('heading', { name: `Events by ${seed.orgShareTitle}` })).toBeVisible({ timeout: 20_000 });
+});
+
+// --- Share-preview refresh address (app/api/revalidate) ----------------------------------------
+// Only the backend may call it (utils/refreshFrontendCache.js), with the server-only shared secret.
+// CI value: REVALIDATION_SECRET in .github/workflows/ci.yml (both .env.test files).
+const REVALIDATION_SECRET = 'ci-only-revalidation-secret';
+const EVENT_TAG = 'event-0123456789abcdef01234567';
+
+test('the share-preview refresh address turns away calls without the right secret', async ({ request }) => {
+  const none = await request.post(`${SITE}/api/revalidate`, { data: { tag: EVENT_TAG } });
+  expect(none.status()).toBe(401);
+
+  const wrong = await request.post(`${SITE}/api/revalidate`, {
+    data: { tag: EVENT_TAG },
+    headers: { 'x-revalidation-secret': 'not-the-secret' },
+  });
+  expect(wrong.status()).toBe(401);
+});
+
+test('the share-preview refresh address accepts the backend\'s secret for known page tags only', async ({ request }) => {
+  const headers = { 'x-revalidation-secret': REVALIDATION_SECRET };
+  for (const tag of [EVENT_TAG, 'listing-0123456789abcdef01234567', 'thread-0123456789abcdef01234567',
+    'deal-0123456789abcdef01234567', 'campaign-test-store-20-off']) {
+    const res = await request.post(`${SITE}/api/revalidate`, { data: { tag }, headers });
+    expect(res.status(), tag).toBe(200);
+  }
+
+  for (const tag of ['homepage', 'event-not-an-id', '']) {
+    const res = await request.post(`${SITE}/api/revalidate`, { data: { tag }, headers });
+    expect(res.status(), tag || '(empty)').toBe(400);
+  }
 });
