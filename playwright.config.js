@@ -62,7 +62,10 @@ export default defineConfig({
       // Frontend PRODUCTION build (into .next-e2e so the dev server's .next is untouched) on 3120.
       // GitHub CI builds in its own step first and sets E2E_SKIP_BUILD, so it only starts here.
       command: process.env.E2E_SKIP_BUILD ? 'npm run start:e2e' : 'npm run build:e2e && npm run start:e2e',
-      url: 'http://localhost:3120',
+      // Readiness probe on robots.txt, NOT /: probing / loads the build-time (empty-rails) homepage
+      // into Next's in-memory cache before global.setup deletes that prerender, so / would serve the
+      // empty version until its 300s revalidate - and the homepage SEO test runs before that.
+      url: 'http://localhost:3120/robots.txt',
       env: { ...testEnv, NEXT_DIST_DIR: '.next-e2e', NODE_OPTIONS: '--max-old-space-size=4096' },
       reuseExistingServer: false,
       timeout: 300_000,
