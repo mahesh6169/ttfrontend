@@ -111,25 +111,7 @@ const EditAdvertPage = () => {
   // Handle redirect on success
   useEffect(() => {
     if (hasSubmitted && success && updateStatus === 'succeeded') {
-      // Revalidate metadata cache
-      const revalidateMetadata = async () => {
-        try {
-          const response = await fetch('/api/revalidate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tag: `listing-${id}`
-            })
-          });
-          const result = await response.json();
-          console.log('✅ Revalidation result:', result);
-        } catch (error) {
-          console.error('❌ Failed to revalidate metadata:', error);
-        }
-      };
-      
-      revalidateMetadata();
-      
+      // The backend refreshes the share preview cache on save (utils/refreshFrontendCache.js)
       // Show success modal
       setShowSuccessModal(true);
     }

@@ -14,11 +14,14 @@ dist/
 .env.production
 .env.development
 .env.test
+.env.*
+!.env.example
 
 # Playwright e2e artefacts (specs/config ARE committed; these are not)
 /test-results/
 /playwright-report/
 /e2e/.auth/
+coverage/
 
 # Logs
 npm-debug.log*
@@ -26,6 +29,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 debug.log
+*.log
 
 # Other package managers' lock files (npm's package-lock.json IS committed)
 yarn.lock

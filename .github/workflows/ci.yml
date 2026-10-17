@@ -89,6 +89,7 @@ jobs:
           STRIPE_SECRET_KEY=$STRIPE_TEST_SECRET_KEY
           STRIPE_WEBHOOK_SECRET=whsec_ci_placeholder
           TEST_STRIPE_ACCOUNT_ID=$TEST_STRIPE_ACCOUNT_ID
+          REVALIDATION_SECRET=ci-only-revalidation-secret
           EOF
           IMG=https://res.cloudinary.com/dtvrbdvkx/image/upload/w_1200,h_630,c_fill,f_auto,q_auto/v1770171839/NoImage._eo6juc.jpg
           OG=https://res.cloudinary.com/dtvrbdvkx/image/upload/w_1200,h_630,c_fill,f_auto,q_auto/v1783923435/SEO_WEBSITE-v1_utr0dt.jpg
@@ -115,7 +116,7 @@ jobs:
           NEXT_PUBLIC_TICKETS_OG_IMAGE_URL=$OG
           NEXT_PUBLIC_DEALS_OG_IMAGE_URL=$OG
           NEXT_PUBLIC_THREADS_OG_IMAGE_URL=$OG
-          NEXT_PUBLIC_REVALIDATION_SECRET=ci-only-revalidation-secret
+          REVALIDATION_SECRET=ci-only-revalidation-secret
           EOF
 
       # The production build the browser suite serves (into .next-e2e, with
