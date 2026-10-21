@@ -113,7 +113,6 @@ export class FormEngine {
             ...fieldConfig,
             // Some fields read differently on a wanted ad (e.g. Travel Date -> Delivered By)
             ...(isWanted && fieldConfig.wantedLabel ? { label: fieldConfig.wantedLabel } : {}),
-            ...(isWanted && fieldConfig.wantedPlaceholder ? { placeholder: fieldConfig.wantedPlaceholder } : {}),
             required: dynamicRequired
           };
         }

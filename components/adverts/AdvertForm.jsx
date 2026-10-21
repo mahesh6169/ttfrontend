@@ -9,6 +9,7 @@ import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from './CategorySelector';
 import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
+import DateTimePicker from '../shared/DateTimePicker';
 import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
@@ -293,6 +294,24 @@ const AdvertForm = ({
               placeholder={`Select ${field.label}`}
               disabled={isVehicleTypeLocked || (!!initialData && isTypeField)}
             />
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
+        );
+      case 'datetime':
+        return (
+          <div>
+            <DateTimePicker
+              value={typeof value === 'string' ? value : ''}
+              onChange={e => {
+                setFieldErrors(prev => ({ ...prev, [field.id]: null }));
+                handleFieldChange(field.id, e.target.value);
+              }}
+              min={new Date().toLocaleDateString('en-CA')}
+              error={hasError}
+            />
+            {!field.required && <p className="text-xs text-slate-500 mt-1">Optional - leave empty if flexible.</p>}
             {fieldErrors[field.id] && (
               <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
             )}

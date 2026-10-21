@@ -1,7 +1,7 @@
 // Pure-function checks for small shared utilities (no page, no browser, no server).
 import { test, expect } from '@playwright/test';
 import { tidyUrl } from '../../utils/helpers/threads/richText.js';
-import { isTravelRequest, getTravelCardLabel, getTravelFieldLabel } from '../../components/adverts/travelRequests.js';
+import { isTravelRequest, getTravelCardLabel, getTravelFieldLabel, formatTravelDateTime } from '../../components/adverts/travelRequests.js';
 
 // Tidied URL display for thread links - featureplans/threads-url-display.md.
 test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-char budget', () => {
@@ -44,4 +44,11 @@ test('a wanted parcel request calls its date "Delivered By"; offered ads keep "T
   expect(getTravelFieldLabel(ad('wanted', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Delivered By');
   expect(getTravelFieldLabel(ad('offered', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Travel Date');
   expect(getTravelFieldLabel(ad('wanted', 'Travel Companion for Parents'), 'travelDate', 'Travel Date')).toBe('Travel Date');
+});
+
+test('a travel date is shown exactly as picked, with no timezone shift', () => {
+  expect(formatTravelDateTime('2026-12-20T17:00')).toBe('20 Dec 2026, 5:00 PM');
+  expect(formatTravelDateTime('2026-01-05T00:15')).toBe('5 Jan 2026, 12:15 AM');
+  expect(formatTravelDateTime('2026-03-09T12:00')).toBe('9 Mar 2026, 12:00 PM');
+  expect(formatTravelDateTime('Flexible')).toBe('Flexible'); // old free-text values pass through
 });

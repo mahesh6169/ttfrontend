@@ -37,3 +37,14 @@ export const getTravelFieldLabel = (advert, key, fallback) =>
   key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel Carrying'
     ? 'Delivered By'
     : fallback;
+
+// "2026-12-20T17:00" -> "20 Dec 2026, 5:00 PM". Plain string maths on purpose: the time is the
+// wall-clock time the poster picked, so it must never be converted to the viewer's timezone.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const formatTravelDateTime = (value) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value || '');
+  if (!m) return value;
+  const hour = Number(m[4]);
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}, ${hour12}:${m[5]} ${hour < 12 ? 'AM' : 'PM'}`;
+};

@@ -36,10 +36,10 @@ const TRAVEL_ROUTE_FIELDS = {
     placeholder: 'e.g., Melbourne VIC, or Hyderabad India',
     required: true
   },
+  // Stored as "YYYY-MM-DDTHH:MM" wall-clock time (no timezone), shown exactly as picked
   travelDate: {
-    type: 'text',
+    type: 'datetime',
     label: 'Travel Date',
-    placeholder: 'e.g., 12 Dec 2026, or Flexible',
     required: true
   }
 };
@@ -1054,8 +1054,7 @@ fields: {
       ...TRAVEL_ROUTE_FIELDS,
       travelDate: {
         ...TRAVEL_ROUTE_FIELDS.travelDate,
-        wantedLabel: 'Delivered By',
-        wantedPlaceholder: 'e.g., 20 Dec 2026, or Flexible'
+        wantedLabel: 'Delivered By'
       },
       parcelSize: {
         type: 'text',
