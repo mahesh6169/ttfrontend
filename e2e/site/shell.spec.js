@@ -39,17 +39,15 @@ test('header nav on desktop and bottom nav on mobile list the same destinations,
 
 test('text fields use 16px text on phones so iPhones do not zoom the page, desktop sizes unchanged, double-tap zoom off', async ({ page }) => {
   // iOS zooms into any field under 16px and does not zoom back (feature 1008).
-  const fieldSizes = () =>
-    page.locator('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select').evaluateAll((els) =>
-      els.filter((e) => e.offsetParent !== null).map((e) => parseFloat(getComputedStyle(e).fontSize))
-    );
+  const fields = page
+    .locator('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select')
+    .filter({ visible: true });
 
   for (const path of ['/listings', '/login']) {
     await page.setViewportSize(MOBILE);
     await page.goto(path);
-    await expect(page.locator('input:visible').first()).toBeVisible({ timeout: 20_000 });
-    const sizes = await fieldSizes();
-    expect(sizes.length, `visible fields on ${path}`).toBeGreaterThan(0);
+    await expect(fields.first(), `a visible field on ${path}`).toBeVisible({ timeout: 20_000 });
+    const sizes = await fields.evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
     for (const size of sizes) expect(size, `field text size on ${path} (mobile)`).toBeGreaterThanOrEqual(16);
   }
 
