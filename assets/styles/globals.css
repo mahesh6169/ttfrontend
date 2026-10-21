@@ -8,6 +8,24 @@
 }
 
 
+/* Stop iPhone page zoom (feature 1008). iOS zooms the page into any text field whose text is
+   under 16px and never zooms back, which pushes the fixed bottom nav off screen. Phones only
+   (below md, where the bottom nav shows); !important beats Tailwind text-xs/text-sm on fields.
+   touch-action: manipulation turns off double-tap zoom but keeps pinch zoom (never use
+   maximum-scale=1 - it blocks pinch zoom on Android). */
+html {
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+}
+
 /* Disable scroll wheel on all number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
