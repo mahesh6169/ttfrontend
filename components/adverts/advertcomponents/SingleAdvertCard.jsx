@@ -13,6 +13,7 @@ import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 import { buildSlugUrl } from '@/utils/slugUtils';
+import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS } from '../travelRequests';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -461,8 +462,16 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             )}
 
+            {/* Travel Requests: budget line for both wanted and offered ads */}
+            {isTravelRequest(advert) && getBudgetText(advert) && (
+              <div className="text-sm sm:text-base">
+                <span className="text-slate-500">Budget:</span>{' '}
+                <span className="font-semibold text-slate-700">{getBudgetText(advert)}</span>
+              </div>
+            )}
+
             {/* Price Information - Only show for offered ads */}
-            {advert.adType !== 'wanted' && (
+            {!isTravelRequest(advert) && advert.adType !== 'wanted' && (
               !PRICING_CONFIG[advert.subcategory] ? (
                 <div className="text-sm sm:text-base">
                   <span className="text-slate-500">Price:</span>{' '}
@@ -504,17 +513,23 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
       </div>
 
       {/* Dynamic Fields Section */}
-      {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value !== '' && value != null).length > 0 && (
+      {advert.fields && Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && !(isTravelRequest(advert) && TRAVEL_BUDGET_FIELD_IDS.includes(key)) && value !== '' && value != null).length > 0 && (
         <div className="my-4 p-3">
           <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Additional Details</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && value !== '' && value != null).map(([key, value]) => (
+            {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && !(isTravelRequest(advert) && TRAVEL_BUDGET_FIELD_IDS.includes(key)) && value !== '' && value != null).map(([key, value]) => (
               <div key={key} className="text-sm sm:text-base">
                 <span className="text-slate-500">{formatFieldName(key)}:</span>{' '}
                 <span className="font-semibold text-slate-700">{value}</span>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {isTravelRequest(advert) && (
+        <div className="my-4 mx-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
+          <span className="font-semibold">Stay safe.</span> {TRAVEL_SAFETY_NOTE}
         </div>
       )}
 

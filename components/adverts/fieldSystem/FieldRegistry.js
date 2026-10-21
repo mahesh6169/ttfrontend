@@ -21,6 +21,48 @@ const SHARED_FIELDS = {
 };
 
 // Define the form structure with sections and dependencies
+// Travel Requests (Parcel Carrying, Travel Companion for Parents) share a route and a budget.
+// The budget is kept in fields (budgetType / budgetAmount), not in the pricing list.
+const TRAVEL_ROUTE_FIELDS = {
+  fromPlace: {
+    type: 'text',
+    label: 'From',
+    placeholder: 'e.g., Sydney NSW',
+    required: true
+  },
+  toPlace: {
+    type: 'text',
+    label: 'To',
+    placeholder: 'e.g., Melbourne VIC, or Hyderabad India',
+    required: true
+  },
+  travelDate: {
+    type: 'text',
+    label: 'Travel Date',
+    placeholder: 'e.g., 12 Dec 2026, or Flexible',
+    required: true
+  }
+};
+
+const TRAVEL_BUDGET_FIELDS = {
+  budgetType: {
+    type: 'select',
+    label: 'Budget / Payment',
+    options: ['Free (favour)', 'Fixed amount', 'Negotiable'],
+    required: true
+  },
+  budgetAmount: {
+    type: 'number',
+    label: 'Amount (AUD)',
+    placeholder: 'e.g., 50',
+    min: 0,
+    required: true,
+    dependencies: {
+      budgetType: ['Fixed amount']
+    }
+  }
+};
+
 export const FORM_STRUCTURE = {
   'Books, Art & Collectables': {
     sections: [
@@ -997,6 +1039,63 @@ fields: {
         fields: []
       }
     ]
+  },
+
+  'Parcel Carrying': {
+    sections: [
+      {
+        id: 'travelDetailsSection',
+        order: 10,
+        title: null,
+        fields: ['fromPlace', 'toPlace', 'travelDate', 'parcelSize', 'parcelContents', 'budgetType', 'budgetAmount']
+      }
+    ],
+    fields: {
+      ...TRAVEL_ROUTE_FIELDS,
+      parcelSize: {
+        type: 'text',
+        label: 'Parcel Size / Weight',
+        placeholder: 'e.g., Small box, about 2 kg',
+        required: true
+      },
+      parcelContents: {
+        type: 'text',
+        label: 'What Is Inside',
+        placeholder: 'e.g., Clothes and a book (can be opened and checked)',
+        required: true
+      },
+      ...TRAVEL_BUDGET_FIELDS
+    }
+  },
+
+  'Travel Companion for Parents': {
+    sections: [
+      {
+        id: 'travelDetailsSection',
+        order: 10,
+        title: null,
+        fields: ['fromPlace', 'toPlace', 'travelDate', 'numberOfParents', 'helpNeeded', 'budgetType', 'budgetAmount']
+      }
+    ],
+    fields: {
+      ...TRAVEL_ROUTE_FIELDS,
+      numberOfParents: {
+        type: 'number',
+        label: 'Number of Parents',
+        placeholder: 'e.g., 1',
+        min: 1,
+        max: 6,
+        required: true
+      },
+      helpNeeded: {
+        type: 'textarea',
+        label: 'Help Needed',
+        placeholder: 'e.g., Wheelchair, language help, airport assistance',
+        required: false,
+        rows: 3
+      },
+      ...TRAVEL_BUDGET_FIELDS
+    }
   }
 
 

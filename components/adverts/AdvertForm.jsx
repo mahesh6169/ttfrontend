@@ -13,6 +13,7 @@ import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
+import { isTravelRequest, TRAVEL_SAFETY_NOTE } from './travelRequests';
 import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
@@ -868,6 +869,13 @@ return (
         />
       </label>
     </div>
+
+    {/* Travel Requests: safety reminder */}
+    {isTravelRequest(formData) && (
+      <div className="p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
+        <span className="font-semibold">Stay safe.</span> {TRAVEL_SAFETY_NOTE}
+      </div>
+    )}
 
     {/* Notify on Wanted Ads - only for offered ads in service categories */}
     {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
