@@ -107,9 +107,13 @@ export class FormEngine {
         if (this.isFieldVisible(fieldId, fieldConfig)) {
           // Override required status based on context
           const dynamicRequired = this.isFieldRequired(fieldId, fieldConfig);
+          const isWanted = this.formData.adType === 'wanted';
           return { 
             id: fieldId, 
             ...fieldConfig,
+            // Some fields read differently on a wanted ad (e.g. Travel Date -> Delivered By)
+            ...(isWanted && fieldConfig.wantedLabel ? { label: fieldConfig.wantedLabel } : {}),
+            ...(isWanted && fieldConfig.wantedPlaceholder ? { placeholder: fieldConfig.wantedPlaceholder } : {}),
             required: dynamicRequired
           };
         }

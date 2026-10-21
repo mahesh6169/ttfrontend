@@ -1,7 +1,7 @@
 // Pure-function checks for small shared utilities (no page, no browser, no server).
 import { test, expect } from '@playwright/test';
 import { tidyUrl } from '../../utils/helpers/threads/richText.js';
-import { isTravelRequest, getTravelCardLabel } from '../../components/adverts/travelRequests.js';
+import { isTravelRequest, getTravelCardLabel, getTravelFieldLabel } from '../../components/adverts/travelRequests.js';
 
 // Tidied URL display for thread links - featureplans/threads-url-display.md.
 test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-char budget', () => {
@@ -37,4 +37,11 @@ test('travel request cards read "Wanted/Offered - budget" from the ad fields', (
   expect(getTravelCardLabel(ad('wanted', {}))).toBe('Wanted');
   expect(isTravelRequest({ subcategory: 'Parcel Carrying' })).toBe(true);
   expect(isTravelRequest({ subcategory: 'Cars & Vehicles' })).toBe(false);
+});
+
+test('a wanted parcel request calls its date "Delivered By"; offered ads keep "Travel Date"', () => {
+  const ad = (adType, subcategory) => ({ adType, subcategory });
+  expect(getTravelFieldLabel(ad('wanted', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Delivered By');
+  expect(getTravelFieldLabel(ad('offered', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Travel Date');
+  expect(getTravelFieldLabel(ad('wanted', 'Travel Companion for Parents'), 'travelDate', 'Travel Date')).toBe('Travel Date');
 });

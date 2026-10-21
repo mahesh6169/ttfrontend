@@ -1052,6 +1052,11 @@ fields: {
     ],
     fields: {
       ...TRAVEL_ROUTE_FIELDS,
+      travelDate: {
+        ...TRAVEL_ROUTE_FIELDS.travelDate,
+        wantedLabel: 'Delivered By',
+        wantedPlaceholder: 'e.g., 20 Dec 2026, or Flexible'
+      },
       parcelSize: {
         type: 'text',
         label: 'Parcel Size / Weight',

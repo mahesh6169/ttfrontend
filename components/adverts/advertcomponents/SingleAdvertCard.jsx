@@ -13,7 +13,7 @@ import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 import { buildSlugUrl } from '@/utils/slugUtils';
-import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS } from '../travelRequests';
+import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel } from '../travelRequests';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -519,7 +519,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && !(isTravelRequest(advert) && TRAVEL_BUDGET_FIELD_IDS.includes(key)) && value !== '' && value != null).map(([key, value]) => (
               <div key={key} className="text-sm sm:text-base">
-                <span className="text-slate-500">{formatFieldName(key)}:</span>{' '}
+                <span className="text-slate-500">{getTravelFieldLabel(advert, key, formatFieldName(key))}:</span>{' '}
                 <span className="font-semibold text-slate-700">{value}</span>
               </div>
             ))}

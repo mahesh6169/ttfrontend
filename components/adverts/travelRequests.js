@@ -31,3 +31,9 @@ export const getTravelCardLabel = (advert) => {
   const budget = getBudgetText(advert);
   return budget ? `${who} - ${budget}` : who;
 };
+
+// Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By"
+export const getTravelFieldLabel = (advert, key, fallback) =>
+  key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel Carrying'
+    ? 'Delivered By'
+    : fallback;
