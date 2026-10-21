@@ -37,6 +37,32 @@ test('header nav on desktop and bottom nav on mobile list the same destinations,
   expect(header.map((d) => d.href)).toEqual(bottom.map((d) => d.href));
 });
 
+test('text fields use 16px text on phones so iPhones do not zoom the page, desktop sizes unchanged, double-tap zoom off', async ({ page }) => {
+  // iOS zooms into any field under 16px and does not zoom back (feature 1008).
+  const fieldSizes = () =>
+    page.locator('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select').evaluateAll((els) =>
+      els.filter((e) => e.offsetParent !== null).map((e) => parseFloat(getComputedStyle(e).fontSize))
+    );
+
+  for (const path of ['/listings', '/login']) {
+    await page.setViewportSize(MOBILE);
+    await page.goto(path);
+    await expect(page.locator('input:visible').first()).toBeVisible({ timeout: 20_000 });
+    const sizes = await fieldSizes();
+    expect(sizes.length, `visible fields on ${path}`).toBeGreaterThan(0);
+    for (const size of sizes) expect(size, `field text size on ${path} (mobile)`).toBeGreaterThanOrEqual(16);
+  }
+
+  // Desktop keeps the designed smaller field text (the login fields are text-sm = 14px).
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/login');
+  await expect(page.locator('input[type=email]')).toBeVisible({ timeout: 20_000 });
+  expect(await page.locator('input[type=email]').evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeLessThan(16);
+
+  // Double-tap zoom off, pinch zoom kept.
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).touchAction)).toBe('manipulation');
+});
+
 test('ordinary pages show exactly one footer', async ({ page }) => {
   // Includes pages that previously had no footer (register, terms, a blog post) and the
   // standalone /tickets landing (unlike the exempt /events/tickets/* booking pages).
