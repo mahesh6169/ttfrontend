@@ -12,8 +12,19 @@ export const TRAVEL_PLACES = [
   ...TRAVEL_OVERSEAS_PLACES,
 ];
 
-export const TRAVEL_SAFETY_NOTE =
-  "Never carry sealed items you haven't checked. Desify does not verify users and takes no payment - agree the details directly in chat.";
+// Safety warning per category and ad type. Shown under the title, and as a tick-to-continue
+// popup when the poster presses Create / Update.
+export const getTravelSafetyNote = (subcategory, adType) => {
+  const wanted = adType === 'wanted';
+  if (subcategory === 'Parcel Carrying') {
+    return wanted
+      ? "If you agree to carry this parcel, open and check everything first. Never carry sealed or unchecked items. Parcels can hide illegal or prohibited goods, and you can be held responsible. Desify does not verify users and takes no payment."
+      : "Don't send valuables, cash or anything you can't afford to lose. Show the traveller what is inside, and check who you are handing it to. Desify does not verify users and takes no payment.";
+  }
+  return wanted
+    ? 'Agree the details in chat first: flights, meeting point and what help is needed. Desify does not verify users and takes no payment. Check who you are dealing with before you commit.'
+    : 'Desify does not verify users or take payment. Talk to the traveller, check the trip details, and meet in a public place such as the airport before your parents travel.';
+};
 
 // Fields shown as the budget line, so the detail page skips them in "Additional Details"
 // Route fields are shown as one "From" / "To" line, so they are skipped there too

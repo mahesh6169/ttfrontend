@@ -13,7 +13,7 @@ import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
-import { isTravelRequest, TRAVEL_SAFETY_NOTE, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
+import { isTravelRequest, getTravelSafetyNote, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
 import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
@@ -55,6 +55,9 @@ const AdvertForm = ({
   const [formSections, setFormSections] = useState([]);
   const [preview, setPreview] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
+  // Travel Requests: the data waits here until the poster ticks "I understand"
+  const [pendingTravelSubmit, setPendingTravelSubmit] = useState(null);
+  const [travelWarningTicked, setTravelWarningTicked] = useState(false);
   const [selectedPriceType, setSelectedPriceType] = useState('');
   const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
 
@@ -572,6 +575,11 @@ const handleSubmit = (e) => {
     notifyOnWanted: formData.notifyOnWanted || false
   };
   
+  if (isTravelRequest(formData)) {
+    setTravelWarningTicked(false);
+    setPendingTravelSubmit(submitData);
+    return;
+  }
   onSubmit(submitData);
 };
 
@@ -897,13 +905,6 @@ return (
       </label>
     </div>
 
-    {/* Travel Requests: safety reminder */}
-    {isTravelRequest(formData) && (
-      <div className="p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
-        <span className="font-semibold">Stay safe.</span> {TRAVEL_SAFETY_NOTE}
-      </div>
-    )}
-
     {/* Notify on Wanted Ads - only for offered ads in service categories */}
     {formData.adType === 'offered' && formData.subcategory && isServiceSubcategory(formData.subcategory) && (
       <div>
@@ -948,6 +949,44 @@ return (
             (initialData ? 'Update' : 'Create')}
       </button>
     </div>
+
+    {/* Travel Requests: the poster must tick before the ad is saved */}
+    {pendingTravelSubmit && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">Before you post</h3>
+          <p className="text-sm text-slate-700 mb-4">
+            {getTravelSafetyNote(pendingTravelSubmit.subcategory, pendingTravelSubmit.adType)}
+          </p>
+          <label className="flex items-start gap-2 text-sm text-slate-800 mb-4">
+            <input
+              type="checkbox"
+              checked={travelWarningTicked}
+              onChange={e => setTravelWarningTicked(e.target.checked)}
+              className="mt-1"
+            />
+            I understand
+          </label>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingTravelSubmit(null)}
+              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!travelWarningTicked}
+              onClick={() => { const data = pendingTravelSubmit; setPendingTravelSubmit(null); onSubmit(data); }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${travelWarningTicked ? 'bg-teal-700 hover:bg-teal-800' : 'bg-slate-400 cursor-not-allowed'}`}
+            >
+              {initialData ? 'Update' : 'Post'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </form>
 );
 };

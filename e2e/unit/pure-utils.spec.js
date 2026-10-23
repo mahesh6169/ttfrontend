@@ -1,7 +1,7 @@
 // Pure-function checks for small shared utilities (no page, no browser, no server).
 import { test, expect } from '@playwright/test';
 import { tidyUrl } from '../../utils/helpers/threads/richText.js';
-import { isTravelRequest, isIndiaToIndia, getTravelCardLabel, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../../components/adverts/travelRequests.js';
+import { isTravelRequest, isIndiaToIndia, getTravelSafetyNote, getTravelCardLabel, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../../components/adverts/travelRequests.js';
 
 // Tidied URL display for thread links - featureplans/threads-url-display.md.
 test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-char budget', () => {
@@ -62,4 +62,15 @@ test('India to India is refused; one end must be in Australia', () => {
   expect(isIndiaToIndia({ fromPlace: 'India', toPlace: 'India' })).toBe(true);
   expect(isIndiaToIndia({ fromPlace: 'India', toPlace: 'Perth / WA' })).toBe(false);
   expect(isIndiaToIndia({})).toBe(false);
+});
+
+test('the travel safety warning differs by category and by Wanted / Offered', () => {
+  const texts = [
+    getTravelSafetyNote('Parcel Carrying', 'wanted'),
+    getTravelSafetyNote('Parcel Carrying', 'offered'),
+    getTravelSafetyNote('Travel Companion for Parents', 'wanted'),
+    getTravelSafetyNote('Travel Companion for Parents', 'offered'),
+  ];
+  expect(new Set(texts).size).toBe(4);
+  expect(texts[0]).toMatch(/sealed/);
 });

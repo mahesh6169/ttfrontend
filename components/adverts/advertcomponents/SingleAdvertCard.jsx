@@ -13,7 +13,7 @@ import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 import { buildSlugUrl } from '@/utils/slugUtils';
-import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../travelRequests';
+import { isTravelRequest, getBudgetText, getTravelSafetyNote, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../travelRequests';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -408,6 +408,13 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             <h1 className="text-base sm:text-lg text-center font-bold my-1 px-2 text-slate-900 break-words">{advert.title}</h1>
           </div>
         )}
+
+        {/* Travel Requests: safety warning right under the title so it cannot be skipped */}
+        {isTravelRequest(advert) && (
+          <div className="my-3 mx-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
+            <span className="font-semibold">Stay safe.</span> {getTravelSafetyNote(advert.subcategory, advert.adType)}
+          </div>
+        )}
     
       {/* Main Details Section */}
       <div className="my-4 p-3">
@@ -534,12 +541,6 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {isTravelRequest(advert) && (
-        <div className="my-4 mx-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
-          <span className="font-semibold">Stay safe.</span> {TRAVEL_SAFETY_NOTE}
         </div>
       )}
 
