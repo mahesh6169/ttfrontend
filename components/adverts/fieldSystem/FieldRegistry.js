@@ -1,5 +1,7 @@
 // components/advertsv2/fieldSystem/FieldRegistry.js
 
+import { TRAVEL_PLACES, TRAVEL_OVERSEAS_PLACES } from '../travelRequests';
+
 // Shared field configurations that multiple categories use
 const SHARED_FIELDS = {
   condition: {
@@ -21,6 +23,66 @@ const SHARED_FIELDS = {
 };
 
 // Define the form structure with sections and dependencies
+// Travel Requests (Parcel, Travel Companion) share a route and a budget.
+// The budget is kept in fields (budgetType / budgetAmount), not in the pricing list.
+// A place is a fixed Australian city/state or India; India asks for a city.
+const TRAVEL_ROUTE_FIELDS = {
+  fromPlace: {
+    type: 'select',
+    label: 'From',
+    options: TRAVEL_PLACES,
+    required: true
+  },
+  fromCity: {
+    type: 'text',
+    label: 'India / City',
+    placeholder: 'Type city name',
+    required: true,
+    dependencies: { fromPlace: TRAVEL_OVERSEAS_PLACES }
+  },
+  toPlace: {
+    type: 'select',
+    label: 'To',
+    options: TRAVEL_PLACES,
+    required: true
+  },
+  toCity: {
+    type: 'text',
+    label: 'India / City',
+    placeholder: 'Type city name',
+    required: true,
+    dependencies: { toPlace: TRAVEL_OVERSEAS_PLACES }
+  },
+  // Stored as a plain "YYYY-MM-DD" (no timezone); flight times go in the description
+  travelDate: {
+    type: 'date',
+    label: 'Travel Date',
+    required: true
+  }
+};
+const TRAVEL_ROUTE_FIELD_IDS = ['fromPlace', 'fromCity', 'toPlace', 'toCity', 'travelDate'];
+
+// Offered ads: the poster is the one paying/charging, so the budget reads as a charge
+const TRAVEL_BUDGET_FIELDS = {
+  budgetType: {
+    type: 'select',
+    label: 'Budget / Payment',
+    offeredLabel: 'Your Charge',
+    options: ['Favour', 'Fixed amount', 'Negotiable'],
+    required: true
+  },
+  budgetAmount: {
+    type: 'number',
+    label: 'Amount (AUD)',
+    placeholder: 'e.g., 50',
+    min: 0,
+    required: true,
+    dependencies: {
+      budgetType: ['Fixed amount']
+    }
+  }
+};
+
 export const FORM_STRUCTURE = {
   'Books, Art & Collectables': {
     sections: [
@@ -997,8 +1059,66 @@ fields: {
         fields: []
       }
     ]
-  }
+  },
 
+  'Parcel': {
+    sections: [
+      {
+        id: 'travelDetailsSection',
+        order: 10,
+        title: null,
+        fields: [...TRAVEL_ROUTE_FIELD_IDS, 'parcelSize', 'parcelContents', 'budgetType', 'budgetAmount']
+      }
+    ],
+    fields: {
+      ...TRAVEL_ROUTE_FIELDS,
+      travelDate: {
+        ...TRAVEL_ROUTE_FIELDS.travelDate,
+        wantedLabel: 'Delivered By'
+      },
+      parcelSize: {
+        type: 'text',
+        label: 'Parcel Size / Weight',
+        offeredLabel: 'Max Parcel Size / Weight You Can Carry',
+        placeholder: 'e.g., Small box, about 2 kg',
+        required: true,
+        optionalForOffered: true
+      },
+      parcelContents: {
+        type: 'text',
+        label: 'What Is Inside',
+        placeholder: 'e.g., Clothes and a book (can be opened and checked)',
+        required: true,
+        hideForOffered: true
+      },
+      ...TRAVEL_BUDGET_FIELDS
+    }
+  },
+
+  'Travel Companion': {
+    sections: [
+      {
+        id: 'travelDetailsSection',
+        order: 10,
+        title: null,
+        fields: [...TRAVEL_ROUTE_FIELD_IDS, 'numberOfParents', 'budgetType', 'budgetAmount']
+      }
+    ],
+    fields: {
+      ...TRAVEL_ROUTE_FIELDS,
+      numberOfParents: {
+        type: 'number',
+        label: 'Number of Parents',
+        offeredLabel: 'Parents You Can Accompany',
+        placeholder: 'e.g., 1',
+        min: 1,
+        max: 6,
+        required: true,
+        optionalForOffered: true
+      },
+      ...TRAVEL_BUDGET_FIELDS
+    }
+  }
 
 };
 
