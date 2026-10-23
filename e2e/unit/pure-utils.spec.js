@@ -1,7 +1,7 @@
 // Pure-function checks for small shared utilities (no page, no browser, no server).
 import { test, expect } from '@playwright/test';
 import { tidyUrl } from '../../utils/helpers/threads/richText.js';
-import { isTravelRequest, getTravelCardLabel, getTravelFieldLabel, formatTravelDateTime } from '../../components/adverts/travelRequests.js';
+import { isTravelRequest, isIndiaToIndia, getTravelCardLabel, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../../components/adverts/travelRequests.js';
 
 // Tidied URL display for thread links - featureplans/threads-url-display.md.
 test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-char budget', () => {
@@ -31,7 +31,7 @@ test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-c
 test('travel request cards read "Wanted/Offered - budget" from the ad fields', () => {
   const ad = (adType, fields) => ({ subcategory: 'Parcel Carrying', adType, fields });
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Fixed amount', budgetAmount: 50 }))).toBe('Wanted - $50');
-  expect(getTravelCardLabel(ad('wanted', { budgetType: 'Free (favour)' }))).toBe('Wanted - Free');
+  expect(getTravelCardLabel(ad('wanted', { budgetType: 'Favour' }))).toBe('Wanted - Favour');
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Negotiable' }))).toBe('Wanted - Negotiable');
   expect(getTravelCardLabel(ad('offered', { budgetType: 'Fixed amount', budgetAmount: 30 }))).toBe('Offered - $30');
   expect(getTravelCardLabel(ad('wanted', {}))).toBe('Wanted');
@@ -47,8 +47,19 @@ test('a wanted parcel request calls its date "Delivered By"; offered ads keep "T
 });
 
 test('a travel date is shown exactly as picked, with no timezone shift', () => {
-  expect(formatTravelDateTime('2026-12-20T17:00')).toBe('20 Dec 2026, 5:00 PM');
-  expect(formatTravelDateTime('2026-01-05T00:15')).toBe('5 Jan 2026, 12:15 AM');
-  expect(formatTravelDateTime('2026-03-09T12:00')).toBe('9 Mar 2026, 12:00 PM');
-  expect(formatTravelDateTime('Flexible')).toBe('Flexible'); // old free-text values pass through
+  expect(formatTravelDate('2026-12-20')).toBe('20 Dec 2026');
+  expect(formatTravelDate('2026-01-05')).toBe('5 Jan 2026');
+  expect(formatTravelDate('Flexible')).toBe('Flexible'); // old free-text values pass through
+});
+
+test('a travel place reads "Perth / WA" or "India / City"', () => {
+  expect(getTravelPlaceText({ fromPlace: 'Perth / WA' }, 'from')).toBe('Perth / WA');
+  expect(getTravelPlaceText({ toPlace: 'India', toCity: ' Hyderabad ' }, 'to')).toBe('India / Hyderabad');
+  expect(getTravelPlaceText({}, 'from')).toBe('');
+});
+
+test('India to India is refused; one end must be in Australia', () => {
+  expect(isIndiaToIndia({ fromPlace: 'India', toPlace: 'India' })).toBe(true);
+  expect(isIndiaToIndia({ fromPlace: 'India', toPlace: 'Perth / WA' })).toBe(false);
+  expect(isIndiaToIndia({})).toBe(false);
 });

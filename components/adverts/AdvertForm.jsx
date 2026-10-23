@@ -9,12 +9,11 @@ import ImageUploader from '../shared/ImageUploader';
 import CategorySelector from './CategorySelector';
 import CommunitySelector from '../shared/CommunitySelector';
 import SimpleDropdown from '../shared/SimpleDropdown';
-import DateTimePicker from '../shared/DateTimePicker';
 import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
-import { isTravelRequest, TRAVEL_SAFETY_NOTE } from './travelRequests';
+import { isTravelRequest, TRAVEL_SAFETY_NOTE, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
 import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
@@ -299,17 +298,19 @@ const AdvertForm = ({
             )}
           </div>
         );
-      case 'datetime':
+      case 'date':
         return (
           <div>
-            <DateTimePicker
+            <input
+              type="date"
               value={typeof value === 'string' ? value : ''}
               onChange={e => {
                 setFieldErrors(prev => ({ ...prev, [field.id]: null }));
                 handleFieldChange(field.id, e.target.value);
               }}
               min={new Date().toLocaleDateString('en-CA')}
-              error={hasError}
+              className={baseClasses}
+              required={field.required}
             />
             {!field.required && <p className="text-xs text-slate-500 mt-1">Optional - leave empty if flexible.</p>}
             {fieldErrors[field.id] && (
@@ -513,6 +514,11 @@ const handleSubmit = (e) => {
     }
   });
   
+  // Travel Requests: one end of the trip must be in Australia
+  if (isTravelRequest(formData) && isIndiaToIndia(formData.fields)) {
+    newFieldErrors.toPlace = 'One end of the trip must be in Australia';
+  }
+
   // Return early if validation fails — inline errors carry the specifics,
   // the toast is just a generic attention-grabber (matches the events form).
   if (Object.keys(newFieldErrors).length > 0) {
@@ -819,7 +825,9 @@ return (
         className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
           fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
         }`}
-        placeholder={formData.adType === 'wanted'
+        placeholder={isTravelRequest(formData)
+          ? getTravelDescriptionPlaceholder(formData.subcategory, formData.adType)
+          : formData.adType === 'wanted'
           ? "Describe what you're looking for, including specific requirements or preferences"
           : "Provide detailed information about your item or service"}
         maxLength="15000"

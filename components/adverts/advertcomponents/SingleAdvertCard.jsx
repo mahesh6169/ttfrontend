@@ -13,7 +13,7 @@ import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 import { buildSlugUrl } from '@/utils/slugUtils';
-import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDateTime } from '../travelRequests';
+import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../travelRequests';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -462,6 +462,16 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
               </div>
             )}
 
+            {/* Travel Requests: route (From -> To) */}
+            {isTravelRequest(advert) && getTravelPlaceText(advert.fields, 'from') && (
+              <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
+                <span className="text-slate-500">Route:</span>{' '}
+                <span className="font-semibold text-slate-700">
+                  {getTravelPlaceText(advert.fields, 'from')} to {getTravelPlaceText(advert.fields, 'to')}
+                </span>
+              </div>
+            )}
+
             {/* Travel Requests: budget line for both wanted and offered ads */}
             {isTravelRequest(advert) && getBudgetText(advert) && (
               <div className="text-sm sm:text-base">
@@ -520,7 +530,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
             {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && !(isTravelRequest(advert) && TRAVEL_BUDGET_FIELD_IDS.includes(key)) && value !== '' && value != null).map(([key, value]) => (
               <div key={key} className="text-sm sm:text-base">
                 <span className="text-slate-500">{getTravelFieldLabel(advert, key, formatFieldName(key))}:</span>{' '}
-                <span className="font-semibold text-slate-700">{key === 'travelDate' ? formatTravelDateTime(value) : value}</span>
+                <span className="font-semibold text-slate-700">{key === 'travelDate' ? formatTravelDate(value) : value}</span>
               </div>
             ))}
           </div>

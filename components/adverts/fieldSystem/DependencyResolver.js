@@ -113,6 +113,7 @@ export class FormEngine {
             ...fieldConfig,
             // Some fields read differently on a wanted ad (e.g. Travel Date -> Delivered By)
             ...(isWanted && fieldConfig.wantedLabel ? { label: fieldConfig.wantedLabel } : {}),
+            ...(this.formData.adType === 'offered' && fieldConfig.offeredLabel ? { label: fieldConfig.offeredLabel } : {}),
             required: dynamicRequired
           };
         }
@@ -127,6 +128,11 @@ export class FormEngine {
     
     // Check if field should be hidden for wanted ads
     if (this.formData.adType === 'wanted' && isFieldHiddenForWanted(this.category, fieldId)) {
+      return false;
+    }
+
+    // Some fields make no sense on an offered ad (e.g. what is inside a parcel you can carry)
+    if (this.formData.adType === 'offered' && fieldConfig.hideForOffered) {
       return false;
     }
     
@@ -158,6 +164,10 @@ export class FormEngine {
       return false;
     }
     
+    if (this.formData.adType === 'offered' && fieldConfig.optionalForOffered) {
+      return false;
+    }
+
     // Otherwise, use the field's configured required status
     return fieldConfig.required || false;
   }
