@@ -23,7 +23,7 @@ const SHARED_FIELDS = {
 };
 
 // Define the form structure with sections and dependencies
-// Travel Requests (Parcel Carrying, Travel Companion for Parents) share a route and a budget.
+// Travel Requests (Parcel, Travel Companion) share a route and a budget.
 // The budget is kept in fields (budgetType / budgetAmount), not in the pricing list.
 // A place is a fixed Australian city/state or India; India asks for a city.
 const TRAVEL_ROUTE_FIELDS = {
@@ -1061,7 +1061,7 @@ fields: {
     ]
   },
 
-  'Parcel Carrying': {
+  'Parcel': {
     sections: [
       {
         id: 'travelDetailsSection',
@@ -1095,7 +1095,7 @@ fields: {
     }
   },
 
-  'Travel Companion for Parents': {
+  'Travel Companion': {
     sections: [
       {
         id: 'travelDetailsSection',

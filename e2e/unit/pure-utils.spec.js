@@ -29,21 +29,21 @@ test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-c
 
 // Travel Requests cards show the budget kept in fields, e.g. "Wanted - $50".
 test('travel request cards read "Wanted/Offered - budget" from the ad fields', () => {
-  const ad = (adType, fields) => ({ subcategory: 'Parcel Carrying', adType, fields });
+  const ad = (adType, fields) => ({ subcategory: 'Parcel', adType, fields });
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Fixed amount', budgetAmount: 50 }))).toBe('Wanted - $50');
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Favour' }))).toBe('Wanted - Favour');
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Negotiable' }))).toBe('Wanted - Negotiable');
   expect(getTravelCardLabel(ad('offered', { budgetType: 'Fixed amount', budgetAmount: 30 }))).toBe('Offered - $30');
   expect(getTravelCardLabel(ad('wanted', {}))).toBe('Wanted');
-  expect(isTravelRequest({ subcategory: 'Parcel Carrying' })).toBe(true);
+  expect(isTravelRequest({ subcategory: 'Parcel' })).toBe(true);
   expect(isTravelRequest({ subcategory: 'Cars & Vehicles' })).toBe(false);
 });
 
 test('a wanted parcel request calls its date "Delivered By"; offered ads keep "Travel Date"', () => {
   const ad = (adType, subcategory) => ({ adType, subcategory });
-  expect(getTravelFieldLabel(ad('wanted', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Delivered By');
-  expect(getTravelFieldLabel(ad('offered', 'Parcel Carrying'), 'travelDate', 'Travel Date')).toBe('Travel Date');
-  expect(getTravelFieldLabel(ad('wanted', 'Travel Companion for Parents'), 'travelDate', 'Travel Date')).toBe('Travel Date');
+  expect(getTravelFieldLabel(ad('wanted', 'Parcel'), 'travelDate', 'Travel Date')).toBe('Delivered By');
+  expect(getTravelFieldLabel(ad('offered', 'Parcel'), 'travelDate', 'Travel Date')).toBe('Travel Date');
+  expect(getTravelFieldLabel(ad('wanted', 'Travel Companion'), 'travelDate', 'Travel Date')).toBe('Travel Date');
 });
 
 test('a travel date is shown exactly as picked, with no timezone shift', () => {

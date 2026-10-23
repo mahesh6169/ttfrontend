@@ -1,8 +1,8 @@
 // components/adverts/travelRequests.js
-// Travel Requests (Parcel Carrying, Travel Companion for Parents): the budget is kept in
+// Travel Requests (Parcel, Travel Companion): the budget is kept in
 // fields (budgetType / budgetAmount), so cards and the detail page read it from there.
 
-export const TRAVEL_REQUEST_SUBCATEGORIES = ['Parcel Carrying', 'Travel Companion for Parents'];
+export const TRAVEL_REQUEST_SUBCATEGORIES = ['Parcel', 'Travel Companion'];
 
 // Fixed places for From / To. India asks for a city (rendered "India / Hyderabad").
 export const TRAVEL_OVERSEAS_PLACES = ['India'];
@@ -54,7 +54,7 @@ export const getTravelCardLabel = (advert) => {
 
 // Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By"
 export const getTravelFieldLabel = (advert, key, fallback) =>
-  key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel Carrying'
+  key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel'
     ? 'Delivered By'
     : fallback;
 
@@ -74,7 +74,7 @@ export const isIndiaToIndia = (fields) =>
 // Description placeholder per category and ad type (the poster overwrites it)
 export const getTravelDescriptionPlaceholder = (subcategory, adType) => {
   const wanted = adType === 'wanted';
-  if (subcategory === 'Parcel Carrying') {
+  if (subcategory === 'Parcel') {
     return wanted
       ? 'Tell us what you need delivered and any handling details. E.g. "Small box of documents and sweets, about 2 kg. Pickup from Parramatta, can be dropped to a friend in Hyderabad. Flexible on dates."'
       : 'Tell people about your trip. E.g. "Flying Qantas QF401, departing 9:30am. Have 5 kg spare luggage space. Can meet at the airport or near Sydney CBD. No liquids, medicines or electronics."';

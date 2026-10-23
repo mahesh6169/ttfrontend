@@ -405,7 +405,7 @@ export const WANTED_FIELDS_CONFIG = {
   },
   
   // Travel requests: a wanted parcel may have no deadline
-  'Parcel Carrying': {
+  'Parcel': {
     hiddenSections: [],
     hiddenFields: [],
     optionalFields: ['travelDate']

@@ -144,10 +144,10 @@ export const CATEGORIES = [
     ],
   },
   {
-    label: 'Travel Requests',
+    label: 'Travel Companion & Parcels',
     subcategories: [
-      'Parcel Carrying',
-      'Travel Companion for Parents',
+      'Parcel',
+      'Travel Companion',
     ],
   },
   {
