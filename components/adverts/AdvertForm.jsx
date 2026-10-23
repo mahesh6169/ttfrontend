@@ -13,7 +13,7 @@ import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
-import { isTravelRequest, getTravelSafetyNote, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
+import { isTravelRequest, TRAVEL_SAFETY_NOTE, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
 import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
@@ -956,7 +956,7 @@ return (
         <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
           <h3 className="text-lg font-semibold text-slate-800 mb-2">Before you post</h3>
           <p className="text-sm text-slate-700 mb-4">
-            {getTravelSafetyNote(pendingTravelSubmit.subcategory, pendingTravelSubmit.adType)}
+            <span className="font-semibold">Safety Tip:</span> {TRAVEL_SAFETY_NOTE}
           </p>
           <label className="flex items-start gap-2 text-sm text-slate-800 mb-4">
             <input

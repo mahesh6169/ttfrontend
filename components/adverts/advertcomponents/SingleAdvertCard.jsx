@@ -13,7 +13,7 @@ import { needsCommunityField } from '../fieldSystem/Categories';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { useRouter } from 'next/navigation';
 import { buildSlugUrl } from '@/utils/slugUtils';
-import { isTravelRequest, getBudgetText, getTravelSafetyNote, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../travelRequests';
+import { isTravelRequest, getBudgetText, TRAVEL_SAFETY_NOTE, TRAVEL_BUDGET_FIELD_IDS, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../travelRequests';
 
 // Helper function to get optimized image URL
 const getOptimizedImageUrl = (imageObj, size = 'auto') => {
@@ -412,7 +412,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
         {/* Travel Requests: safety warning right under the title so it cannot be skipped */}
         {isTravelRequest(advert) && (
           <div className="my-3 mx-3 p-3 rounded-lg border border-amber-300 bg-amber-50 text-sm text-amber-900">
-            <span className="font-semibold">Stay safe.</span> {getTravelSafetyNote(advert.subcategory, advert.adType)}
+            <span className="font-semibold">Safety Tip:</span> {TRAVEL_SAFETY_NOTE}
           </div>
         )}
     
