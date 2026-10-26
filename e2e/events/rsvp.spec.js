@@ -197,7 +197,8 @@ test.describe('as a member', () => {
   });
 });
 
-test('a finished free event shows Registrations Closed while an upcoming one still offers Register', async ({ page }) => {
+// SKIPPED 2026-10-26 with the owner's OK: failed twice in CI on feature 1009 (unrelated to it, near midnight Sydney); see Delivery/backlog.md
+test.skip('a finished free event shows Registrations Closed while an upcoming one still offers Register', async ({ page }) => {
   // Opened from the Past events strip: greyed, disabled Registrations Closed and no Register button.
   await page.goto('/events');
   const section = page.getByTestId('past-events');

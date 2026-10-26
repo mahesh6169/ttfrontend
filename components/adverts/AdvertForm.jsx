@@ -13,6 +13,7 @@ import FieldSystem from './fieldSystem';
 import { getSharedField } from './fieldSystem/FieldRegistry';
 import { needsCommunityField, isServiceSubcategory } from './fieldSystem/Categories';
 import ContactInfoInput from './ContactInfoInput';
+import { isTravelRequest, TRAVEL_SAFETY_NOTE, isIndiaToIndia, getTravelDescriptionPlaceholder } from './travelRequests';
 import { validateTitle, TITLE_MAX } from '@/utils/validateTitle';
 
 const AdvertForm = ({
@@ -54,6 +55,9 @@ const AdvertForm = ({
   const [formSections, setFormSections] = useState([]);
   const [preview, setPreview] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
+  // Travel Requests: the data waits here until the poster ticks "I understand"
+  const [pendingTravelSubmit, setPendingTravelSubmit] = useState(null);
+  const [travelWarningTicked, setTravelWarningTicked] = useState(false);
   const [selectedPriceType, setSelectedPriceType] = useState('');
   const [existingImages, setExistingImages] = useState(initialData?.existingImages || []);
 
@@ -297,6 +301,26 @@ const AdvertForm = ({
             )}
           </div>
         );
+      case 'date':
+        return (
+          <div>
+            <input
+              type="date"
+              value={typeof value === 'string' ? value : ''}
+              onChange={e => {
+                setFieldErrors(prev => ({ ...prev, [field.id]: null }));
+                handleFieldChange(field.id, e.target.value);
+              }}
+              min={new Date().toLocaleDateString('en-CA')}
+              className={baseClasses}
+              required={field.required}
+            />
+            {!field.required && <p className="text-xs text-slate-500 mt-1">Optional - leave empty if flexible.</p>}
+            {fieldErrors[field.id] && (
+              <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors[field.id]}</p>
+            )}
+          </div>
+        );
       case 'textarea':
         return (
           <div>
@@ -493,6 +517,11 @@ const handleSubmit = (e) => {
     }
   });
   
+  // Travel Requests: one end of the trip must be in Australia
+  if (isTravelRequest(formData) && isIndiaToIndia(formData.fields)) {
+    newFieldErrors.toPlace = 'One end of the trip must be in Australia';
+  }
+
   // Return early if validation fails — inline errors carry the specifics,
   // the toast is just a generic attention-grabber (matches the events form).
   if (Object.keys(newFieldErrors).length > 0) {
@@ -546,6 +575,11 @@ const handleSubmit = (e) => {
     notifyOnWanted: formData.notifyOnWanted || false
   };
   
+  if (isTravelRequest(formData)) {
+    setTravelWarningTicked(false);
+    setPendingTravelSubmit(submitData);
+    return;
+  }
   onSubmit(submitData);
 };
 
@@ -799,7 +833,9 @@ return (
         className={`w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg min-h-[12rem] sm:min-h-[10rem] resize-none sm:resize-y focus:outline-none focus:ring-2 ${
           fieldErrors.description ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
         }`}
-        placeholder={formData.adType === 'wanted'
+        placeholder={isTravelRequest(formData)
+          ? getTravelDescriptionPlaceholder(formData.subcategory, formData.adType)
+          : formData.adType === 'wanted'
           ? "Describe what you're looking for, including specific requirements or preferences"
           : "Provide detailed information about your item or service"}
         maxLength="15000"
@@ -913,6 +949,42 @@ return (
             (initialData ? 'Update' : 'Create')}
       </button>
     </div>
+
+    {/* Travel Requests: the poster must tick before the ad is saved */}
+    {pendingTravelSubmit && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div role="dialog" aria-modal="true" className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-lg bg-white p-4 shadow-xl">
+          <p className="text-sm text-slate-700 mb-3">
+            <span className="font-semibold">Safety Tip:</span> {TRAVEL_SAFETY_NOTE}
+          </p>
+          <label className="flex items-center gap-2 text-sm text-slate-800 mb-3">
+            <input
+              type="checkbox"
+              checked={travelWarningTicked}
+              onChange={e => setTravelWarningTicked(e.target.checked)}
+            />
+            I understand
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setPendingTravelSubmit(null)}
+              className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!travelWarningTicked}
+              onClick={() => { const data = pendingTravelSubmit; setPendingTravelSubmit(null); onSubmit(data); }}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white ${travelWarningTicked ? 'bg-teal-700 hover:bg-teal-800' : 'bg-slate-400 cursor-not-allowed'}`}
+            >
+              {initialData ? 'Update' : 'Post'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   </form>
 );
 };

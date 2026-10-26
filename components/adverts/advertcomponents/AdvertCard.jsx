@@ -9,6 +9,7 @@ import { format, differenceInDays } from 'date-fns';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { PRICING_CONFIG } from '../fieldSystem/PricingConfig';
 import { buildSlugUrl } from '@/utils/slugUtils';
+import { isTravelRequest, getTravelCardLabel } from '../travelRequests';
 
 // Odd-shape thresholds: wider than 2.2:1 or taller than ~1:1.5 → show whole (contain).
 // Everything in between (normal photos / flyers) fills the box (cover).
@@ -110,7 +111,8 @@ const AdvertCard = ({ advert, onWishlistToggle, isInWishlist }) => {
 
           {/* Price Box - Show "Wanted" for wanted ads */}
           <div className="text-xs font-medium mt-0.5 text-slate-700 h-4">
-            {advert.adType === 'wanted' ? 'Wanted' :
+            {isTravelRequest(advert) ? getTravelCardLabel(advert) :
+             advert.adType === 'wanted' ? 'Wanted' :
              (!(PRICING_CONFIG[advert.category] || PRICING_CONFIG[advert.subcategory]) ? 'Request quote' : (priceLabel || '\u00A0'))}
           </div>
 

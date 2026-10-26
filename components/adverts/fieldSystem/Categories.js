@@ -144,6 +144,13 @@ export const CATEGORIES = [
     ],
   },
   {
+    label: 'Travel Companion & Parcels',
+    subcategories: [
+      'Parcel',
+      'Travel Companion',
+    ],
+  },
+  {
     label: 'Marketing & Advertising',
     subcategories: [
       'Logo Services',
