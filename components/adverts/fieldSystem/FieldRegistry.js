@@ -1106,7 +1106,6 @@ fields: {
       numberOfParents: {
         type: 'number',
         label: 'Number of People',
-        offeredLabel: 'People You Can Accompany',
         placeholder: 'e.g., 1',
         min: 1,
         max: 6,

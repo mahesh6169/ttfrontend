@@ -45,7 +45,7 @@ test('a wanted parcel request calls its date "Delivered By"; offered ads keep "T
   expect(getTravelFieldLabel(ad('offered', 'Parcel'), 'travelDate', 'Travel Date')).toBe('Travel Date');
   expect(getTravelFieldLabel(ad('wanted', 'Travel Companion'), 'travelDate', 'Travel Date')).toBe('Travel Date');
   expect(getTravelFieldLabel(ad('wanted', 'Travel Companion'), 'numberOfParents', 'Number Of Parents')).toBe('Number of People');
-  expect(getTravelFieldLabel(ad('offered', 'Travel Companion'), 'numberOfParents', 'Number Of Parents')).toBe('People You Can Accompany');
+  expect(getTravelFieldLabel(ad('offered', 'Travel Companion'), 'numberOfParents', 'Number Of Parents')).toBe('Number of People');
 });
 
 test('a travel date is shown exactly as picked, with no timezone shift', () => {

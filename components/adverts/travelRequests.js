@@ -53,10 +53,10 @@ export const getTravelCardLabel = (advert) => {
 };
 
 // Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By",
-// and the companion head-count reads "Number of People" (offered: "People You Can Accompany")
+// and the companion head-count reads "Number of People"
 export const getTravelFieldLabel = (advert, key, fallback) => {
   if (key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel') return 'Delivered By';
-  if (key === 'numberOfParents') return advert.adType === 'wanted' ? 'Number of People' : 'People You Can Accompany';
+  if (key === 'numberOfParents') return 'Number of People';
   return fallback;
 };
 
