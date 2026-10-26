@@ -53,10 +53,9 @@ export const getTravelCardLabel = (advert) => {
 };
 
 // Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By",
-// an offered parcel's size reads "Max Parcel Size / Weight You Can Carry", and the companion head-count reads "Number of People" (offered: "People You Can Accompany")
+// and the companion head-count reads "Number of People" (offered: "People You Can Accompany")
 export const getTravelFieldLabel = (advert, key, fallback) => {
   if (key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel') return 'Delivered By';
-  if (key === 'parcelSize' && advert.adType === 'offered') return 'Max Parcel Size / Weight You Can Carry';
   if (key === 'numberOfParents') return advert.adType === 'wanted' ? 'Number of People' : 'People You Can Accompany';
   return fallback;
 };

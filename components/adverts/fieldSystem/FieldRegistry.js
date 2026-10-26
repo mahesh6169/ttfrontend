@@ -1076,8 +1076,7 @@ fields: {
       },
       parcelSize: {
         type: 'text',
-        label: 'Parcel Size / Weight',
-        offeredLabel: 'Max Parcel Size / Weight You Can Carry',
+        label: 'Parcel Size',
         placeholder: 'e.g., Small box, about 2 kg',
         required: true,
         optionalForOffered: true
