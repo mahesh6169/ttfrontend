@@ -62,12 +62,10 @@ const TRAVEL_ROUTE_FIELDS = {
 };
 const TRAVEL_ROUTE_FIELD_IDS = ['fromPlace', 'fromCity', 'toPlace', 'toCity', 'travelDate'];
 
-// Offered ads: the poster is the one paying/charging, so the budget reads as a charge
 const TRAVEL_BUDGET_FIELDS = {
   budgetType: {
     type: 'select',
-    label: 'Budget / Payment',
-    offeredLabel: 'Your Charge',
+    label: 'Price',
     options: ['Favour', 'Fixed amount', 'Negotiable'],
     required: true
   },
