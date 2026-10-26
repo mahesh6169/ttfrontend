@@ -80,6 +80,6 @@ export const getTravelDescriptionPlaceholder = (subcategory, adType) => {
       : 'Tell people about your trip. E.g. "Flying Qantas QF401, departing 9:30am. Have 5 kg spare luggage space. Can meet at the airport or near Sydney CBD. No liquids, medicines or electronics."';
   }
   return wanted
-    ? 'Tell us about your parents and the help they need. Flight details and baggage. Language they speak and kind of help needed (transit, entire trip companion) etc.'
-    : 'Tell people about your trip and what you can help with. E.g. "Flying Singapore Airlines SQ232 at 8:40am. Happy to assist elderly parents with check-in, transit and immigration. I speak Telugu, Hindi and English."';
+    ? 'Tell us about who is travelling and the help they need. Flight details and baggage. Language they speak and kind of help needed (transit, entire trip companion) etc.'
+    : 'Tell people about your trip and what you can help with. E.g. "Flying Singapore Airlines SQ232 at 8:40am. Happy to assist anyone travelling alone, such as elderly parents, with check-in, transit and immigration. I speak Telugu, Hindi and English."';
 };
