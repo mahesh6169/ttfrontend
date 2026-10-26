@@ -210,7 +210,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
   // Travel Requests: "Travel Route" line shown in Additional Details
   const hasTravelRoute = isTravelRequest(advert) && !!getTravelPlaceText(advert.fields, 'from');
   const travelRouteLine = hasTravelRoute && (
-    <div className="text-sm sm:text-base">
+    <div className="text-sm sm:text-base col-span-1 sm:col-span-2">
       <span className="text-slate-500">Travel Route:</span>{' '}
       <span className="font-semibold text-slate-700">
         {getTravelPlaceText(advert.fields, 'from')} to {getTravelPlaceText(advert.fields, 'to')}
@@ -537,7 +537,7 @@ const SingleAdvertCard = ({ advert, chatProps }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {Object.entries(advert.fields).filter(([key, value]) => key !== 'serviceArea' && !(isTravelRequest(advert) && TRAVEL_BUDGET_FIELD_IDS.includes(key)) && value !== '' && value != null).map(([key, value]) => (
               <React.Fragment key={key}>
-                <div className="text-sm sm:text-base">
+                <div className={`text-sm sm:text-base ${key === 'travelDate' && isTravelRequest(advert) ? 'col-span-1 sm:col-span-2' : ''}`}>
                   <span className="text-slate-500">{getTravelFieldLabel(advert, key, formatFieldName(key))}:</span>{' '}
                   <span className="font-semibold text-slate-700">{key === 'travelDate' ? formatTravelDate(value) : value}</span>
                 </div>
