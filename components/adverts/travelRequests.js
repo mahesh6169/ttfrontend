@@ -52,11 +52,13 @@ export const getTravelCardLabel = (advert) => {
   return budget ? `${who} - ${budget}` : who;
 };
 
-// Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By"
-export const getTravelFieldLabel = (advert, key, fallback) =>
-  key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel'
-    ? 'Delivered By'
-    : fallback;
+// Detail page label for a stored field; a wanted parcel's travelDate reads "Delivered By",
+// and the companion head-count reads "Number of People" (offered: "People You Can Accompany")
+export const getTravelFieldLabel = (advert, key, fallback) => {
+  if (key === 'travelDate' && advert.adType === 'wanted' && advert.subcategory === 'Parcel') return 'Delivered By';
+  if (key === 'numberOfParents') return advert.adType === 'wanted' ? 'Number of People' : 'People You Can Accompany';
+  return fallback;
+};
 
 // "2026-12-20" -> "20 Dec 2026". Plain string maths on purpose: the date is exactly what the
 // poster picked, so it must never be converted to the viewer's timezone.
