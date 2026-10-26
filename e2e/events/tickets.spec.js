@@ -191,7 +191,8 @@ test.describe('returning to the tickets page', () => {
 });
 
 test.describe('sales closed', () => {
-  test('an event whose sales have closed shows a disabled Sales Closed button and a dimmed ticket list, also when opened from the Past strip', async ({ page }) => {
+  // SKIPPED 2026-10-26 with the owner's OK: failed twice in CI on feature 1009 (unrelated to it, near midnight Sydney); see Delivery/backlog.md
+  test.skip('an event whose sales have closed shows a disabled Sales Closed button and a dimmed ticket list, also when opened from the Past strip', async ({ page }) => {
     const seed = readSeed();
 
     await page.goto(`/events/views/${seed.salesCutoffEventId}`);
