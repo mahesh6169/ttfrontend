@@ -953,25 +953,23 @@ return (
     {/* Travel Requests: the poster must tick before the ad is saved */}
     {pendingTravelSubmit && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
-          <h3 className="text-lg font-semibold text-slate-800 mb-2">Before you post</h3>
-          <p className="text-sm text-slate-700 mb-4">
+        <div role="dialog" aria-modal="true" className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-lg bg-white p-4 shadow-xl">
+          <p className="text-sm text-slate-700 mb-3">
             <span className="font-semibold">Safety Tip:</span> {TRAVEL_SAFETY_NOTE}
           </p>
-          <label className="flex items-start gap-2 text-sm text-slate-800 mb-4">
+          <label className="flex items-center gap-2 text-sm text-slate-800 mb-3">
             <input
               type="checkbox"
               checked={travelWarningTicked}
               onChange={e => setTravelWarningTicked(e.target.checked)}
-              className="mt-1"
             />
             I understand
           </label>
-          <div className="flex justify-end gap-2">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPendingTravelSubmit(null)}
-              className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm"
+              className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm"
             >
               Cancel
             </button>
@@ -979,7 +977,7 @@ return (
               type="button"
               disabled={!travelWarningTicked}
               onClick={() => { const data = pendingTravelSubmit; setPendingTravelSubmit(null); onSubmit(data); }}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold text-white ${travelWarningTicked ? 'bg-teal-700 hover:bg-teal-800' : 'bg-slate-400 cursor-not-allowed'}`}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold text-white ${travelWarningTicked ? 'bg-teal-700 hover:bg-teal-800' : 'bg-slate-400 cursor-not-allowed'}`}
             >
               {initialData ? 'Update' : 'Post'}
             </button>
