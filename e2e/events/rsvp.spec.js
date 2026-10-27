@@ -1,7 +1,7 @@
 // Free-event RSVP journeys: guest and member registration, the RSVP page layout and gating,
 // blocking answers, the date picker, and registration closed vs open.
 import { test, expect } from '@playwright/test';
-import { readSeed, dbCount } from '../helpers.js';
+import { readSeed, dbCount, openPastEvent } from '../helpers.js';
 
 const MOBILE = { width: 390, height: 800 };
 
@@ -195,19 +195,44 @@ test.describe('as a member', () => {
     // Now every required field is answered - Register greens (enables).
     await expect(register).toBeEnabled();
   });
+
+  // RSVP stays open until 11:59 PM on the event day (event's own timezone), like paid sales.
+  // The event response is shifted in the browser so the page sees a start time; the timezone is
+  // picked so its local clock is between 1 AM and 10 PM now, so the test is safe at any hour.
+  test('the RSVP page stays open for an event that started earlier today and closes once the event day is over', async ({ page }) => {
+    const seed = readSeed();
+    const zones = ['Australia/Sydney', 'Asia/Kolkata', 'Europe/London', 'America/New_York', 'Pacific/Honolulu'];
+    const localHour = (tz) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+    const timeZone = zones.find((tz) => localHour(tz) >= 1 && localHour(tz) <= 22);
+
+    let shiftedStart;
+    await page.route(new RegExp(`/events/views/${seed.seoFreeEventId}$`), async (route) => {
+      const response = await route.fetch();
+      const event = await response.json();
+      await route.fulfill({ response, json: { ...event, dateTime: shiftedStart, timeZone } });
+    });
+
+    // Started 30 minutes ago, still the same local day: the form and Register are there.
+    shiftedStart = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    await page.goto(`/events/rsvp/${seed.seoFreeEventId}`);
+    await expect(page.getByPlaceholder('Enter full name')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
+    await expect(page.getByText('Registrations for this event have closed.')).toHaveCount(0);
+
+    // Started two days ago: the event day is over, so the closed note shows and the form is gone.
+    shiftedStart = new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString();
+    await page.goto(`/events/rsvp/${seed.seoFreeEventId}`);
+    await expect(page.getByText('Registrations for this event have closed.')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByPlaceholder('Enter full name')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Back to event' })).toBeVisible();
+  });
 });
 
-// SKIPPED 2026-10-26 with the owner's OK: failed twice in CI on feature 1009 (unrelated to it, near midnight Sydney); see Delivery/backlog.md
-test.skip('a finished free event shows Registrations Closed while an upcoming one still offers Register', async ({ page }) => {
+test('a finished free event shows Registrations Closed while an upcoming one still offers Register', async ({ page }) => {
   // Opened from the Past events strip: greyed, disabled Registrations Closed and no Register button.
-  await page.goto('/events');
-  const section = page.getByTestId('past-events');
-  await expect(section.getByText('E2E Past Offline Fest')).toBeVisible({ timeout: 20_000 });
-  await section.getByText('E2E Past Offline Fest').click();
-
-  await expect(page.getByRole('heading', { name: 'E2E Past Offline Fest' })).toBeVisible({ timeout: 20_000 });
+  await openPastEvent(page, 'E2E Past Offline Fest');
   const closedButton = page.getByRole('button', { name: 'Registrations Closed' });
-  await expect(closedButton).toBeVisible();
+  await expect(closedButton).toBeVisible({ timeout: 15_000 });
   await expect(closedButton).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Register for Event' })).toHaveCount(0);
 

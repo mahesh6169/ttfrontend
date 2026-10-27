@@ -20,6 +20,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import AttendeeInfoSection from '@/components/events/tickets/AttendeeInfoSection';
 import BackButton from '@/components/BackButton';
 import EmptyState from '@/components/layout/EmptyState';
+import { isSalesClosed } from '@/utils/events/salesCutoff';
 
 // AU mobile: 10 digits starting with 04 (spaces allowed in the field, ignored here).
 const normalizeMobile = (m) => String(m || '').replace(/\s+/g, '');
@@ -268,12 +269,12 @@ const RsvpPage = () => {
     );
   }
 
-  // Past event guard
-  const eventDate = selectedEvent.dateTime ? new Date(selectedEvent.dateTime) : null;
-  const isPastEvent = eventDate && eventDate < new Date();
+  // Registration closes at 11:59 PM on the event day (event's own timezone) - the same cutoff
+  // the event page and the backend use, so an event that started earlier today still takes RSVPs.
+  const registrationClosed = isSalesClosed(selectedEvent);
 
   // The form is only shown (and the sticky bar only pinned) when there is something to fill in.
-  const showForm = !isRegistered && !isPastEvent && !justRegistered;
+  const showForm = !isRegistered && !registrationClosed && !justRegistered;
 
   return (
     <div>
@@ -350,14 +351,14 @@ const RsvpPage = () => {
           </div>
         )}
 
-        {/* Past-event banner */}
-        {isPastEvent && (
+        {/* Registrations-closed banner */}
+        {registrationClosed && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 mb-4">
-            This event has already taken place. Registration is closed.
+            Registrations for this event have closed.
           </div>
         )}
 
-        {/* Form — hidden when already registered, just-registered, or event is past. One bordered
+        {/* Form — hidden when already registered, just-registered, or registration has closed. One bordered
             card wraps every field so the page reads as a single form; the custom-questions block
             rides inside it as a divided section (AttendeeInfoSection `bare`). */}
         {showForm && (
@@ -485,9 +486,9 @@ const RsvpPage = () => {
           </form>
         )}
 
-        {/* Past-event back-to-event link. (Registered/just-registered states have their own
+        {/* Registrations-closed back-to-event link. (Registered/just-registered states have their own
             action buttons inside the unified registered card above.) */}
-        {isPastEvent && !justRegistered && !isRegistered && (
+        {registrationClosed && !justRegistered && !isRegistered && (
           <div className="flex justify-center pt-4 border-t border-slate-200 mt-4">
             <Link
               href={`/events/views/${eventId}`}

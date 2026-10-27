@@ -2,7 +2,7 @@
 // badges, restoring a held reservation, sales closed, and the discount hint. Runs as the member
 // (selecting tickets needs a session) except the discount hint, which is the owner's view.
 import { test, expect } from '@playwright/test';
-import { readSeed, clearReservation } from '../helpers.js';
+import { readSeed, clearReservation, openPastEvent } from '../helpers.js';
 
 test.use({ storageState: 'e2e/.auth/member.json' });
 
@@ -191,8 +191,7 @@ test.describe('returning to the tickets page', () => {
 });
 
 test.describe('sales closed', () => {
-  // SKIPPED 2026-10-26 with the owner's OK: failed twice in CI on feature 1009 (unrelated to it, near midnight Sydney); see Delivery/backlog.md
-  test.skip('an event whose sales have closed shows a disabled Sales Closed button and a dimmed ticket list, also when opened from the Past strip', async ({ page }) => {
+  test('an event whose sales have closed shows a disabled Sales Closed button and a dimmed ticket list, also when opened from the Past strip', async ({ page }) => {
     const seed = readSeed();
 
     await page.goto(`/events/views/${seed.salesCutoffEventId}`);
@@ -211,11 +210,7 @@ test.describe('sales closed', () => {
     await expect(ticketList.first()).toHaveClass(/opacity-50/);
 
     // A finished PAID event opened from the Past events strip shows the same disabled Sales Closed.
-    await page.goto('/events');
-    const section = page.getByTestId('past-events');
-    await expect(section.getByText('E2E Past Featured Paid Fest')).toBeVisible({ timeout: 20_000 });
-    await section.getByText('E2E Past Featured Paid Fest').click();
-    await expect(page.getByRole('heading', { name: 'E2E Past Featured Paid Fest' })).toBeVisible({ timeout: 20_000 });
+    await openPastEvent(page, 'E2E Past Featured Paid Fest');
     const closedButton = page.getByRole('button', { name: 'Sales Closed' });
     // The button renders once the client has loaded the event's sales state, after the heading.
     await expect(closedButton).toBeVisible({ timeout: 15_000 });
