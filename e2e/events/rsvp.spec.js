@@ -212,11 +212,11 @@ test.describe('as a member', () => {
       await route.fulfill({ response, json: { ...event, dateTime: shiftedStart, timeZone } });
     });
 
-    // Started 30 minutes ago, still the same local day: the form and Register are there.
+    // Started 30 minutes ago, still the same local day: the form and its Register button are there.
     shiftedStart = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     await page.goto(`/events/rsvp/${seed.seoFreeEventId}`);
     await expect(page.getByPlaceholder('Enter full name')).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
+    await expect(page.getByTestId('rsvp-register')).toBeVisible();
     await expect(page.getByText('Registrations for this event have closed.')).toHaveCount(0);
 
     // Started two days ago: the event day is over, so the closed note shows and the form is gone.
@@ -224,6 +224,7 @@ test.describe('as a member', () => {
     await page.goto(`/events/rsvp/${seed.seoFreeEventId}`);
     await expect(page.getByText('Registrations for this event have closed.')).toBeVisible({ timeout: 20_000 });
     await expect(page.getByPlaceholder('Enter full name')).toHaveCount(0);
+    await expect(page.getByTestId('rsvp-register')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Back to event' })).toBeVisible();
   });
 });
