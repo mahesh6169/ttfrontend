@@ -85,6 +85,21 @@ export async function clearReservation(page, eventId) {
   }
 }
 
+// Open a finished event from the Past events strip on /events and wait until its event page
+// (/events/<title-slug>-<id>) has really opened. The strip card shows the same title as the event
+// page heading, so a heading check alone can pass while still on /events; on a busy CI runner the
+// first click can also land before the card is interactive, so click again until the address changes.
+export async function openPastEvent(page, title) {
+  await page.goto('/events');
+  const card = page.getByTestId('past-events').getByText(title);
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await expect(async () => {
+    if (!/\/events\/[^?#]+/.test(page.url())) await card.click({ timeout: 5_000 });
+    await expect(page).toHaveURL(/\/events\/[^?#]+/, { timeout: 5_000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 20_000 });
+}
+
 // Open the edit wizard for an event (as its organiser) and wait for Step 1.
 export async function openEdit(page, id) {
   await page.goto(`/events/edit/${id}`);
