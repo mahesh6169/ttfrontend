@@ -100,7 +100,7 @@ test('editing a thread reopens the editor with its formatting; adding strikethro
   await selectBack(page, 'meet here'.length);
   await page.getByRole('button', { name: 'Map' }).click();
   await page.getByLabel('Google Maps link for the selected words').fill('maps.google.com/?q=Parramatta');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   // Save, then visit the thread page (first visit -> fresh render) and confirm the change.
   await page.getByRole('button', { name: /^Update$/ }).click();
@@ -194,7 +194,7 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await selectBack(page, 'click here'.length);
   await page.getByRole('button', { name: 'Link' }).click();
   await page.getByLabel('Web address for the selected words').fill('google.com');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   const named = editorBody(page).locator('a', { hasText: 'click here' });
   await expect(named).toHaveAttribute('href', /^https:\/\/google\.com/);
   await expect(named).toHaveText('click here');
@@ -205,9 +205,9 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await selectBack(page, 'old site'.length);
   await page.getByRole('button', { name: 'Link' }).click();
   await page.getByLabel('Web address for the selected words').fill('http://example.com');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(linkError(page)).toContainText('https://');
-  await page.getByRole('button', { name: 'Cancel' }).click();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(editorBody(page).locator('a', { hasText: 'old site' })).toHaveCount(0);
 
   // Map button: only Google Maps links are accepted.
@@ -217,10 +217,10 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await selectBack(page, 'the place'.length);
   await page.getByRole('button', { name: 'Map' }).click();
   await page.getByLabel('Google Maps link for the selected words').fill('https://example.com');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(linkError(page)).toContainText('Google Maps');
   await page.getByLabel('Google Maps link for the selected words').fill('https://maps.app.goo.gl/e2eAbc');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(editorBody(page).locator('a[href="https://maps.app.goo.gl/e2eAbc"]')).toHaveText('the place');
 });
 
