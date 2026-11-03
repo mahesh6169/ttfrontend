@@ -10,6 +10,9 @@ test.use({ storageState: 'e2e/.auth/member.json' });
 
 const editorBody = (page) => page.locator('.thread-editor-content');
 
+// The Link/Map box's own error line (Next.js also has a hidden role="alert" route announcer).
+const linkError = (page) => page.locator('p[role="alert"]');
+
 // Select the last n characters typed (keyboard selection is deterministic in a contenteditable).
 const selectBack = async (page, n) => {
   for (let i = 0; i < n; i++) await page.keyboard.press('Shift+ArrowLeft');
@@ -203,7 +206,7 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await page.getByRole('button', { name: 'Link' }).click();
   await page.getByLabel('Web address for the selected words').fill('http://example.com');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('alert')).toContainText('https://');
+  await expect(linkError(page)).toContainText('https://');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(editorBody(page).locator('a', { hasText: 'old site' })).toHaveCount(0);
 
@@ -215,7 +218,7 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await page.getByRole('button', { name: 'Map' }).click();
   await page.getByLabel('Google Maps link for the selected words').fill('https://example.com');
   await page.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('alert')).toContainText('Google Maps');
+  await expect(linkError(page)).toContainText('Google Maps');
   await page.getByLabel('Google Maps link for the selected words').fill('https://maps.app.goo.gl/e2eAbc');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(editorBody(page).locator('a[href="https://maps.app.goo.gl/e2eAbc"]')).toHaveText('the place');
