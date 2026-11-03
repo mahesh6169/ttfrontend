@@ -32,7 +32,12 @@ export const NAV_DESTINATIONS = [
   { href: '/', label: 'Home', Icon: HomeIcon },
   { href: '/listings', label: 'Listings', Icon: RiAdvertisementFill },
   { href: '/events', label: 'Events', Icon: FaCalendarAlt },
-  { href: '/deals', label: 'Deals', Icon: MdLocalOffer },
-  { href: '/coupons', label: 'Coupons', Icon: HiReceiptPercent },
+  { href: '/deals', label: 'Deals', Icon: MdLocalOffer, setting: 'showDeals' },
+  { href: '/coupons', label: 'Coupons', Icon: HiReceiptPercent, setting: 'showCoupons' },
   { href: '/threads', label: 'Forum', Icon: MdOutlineGroups2 },
 ];
+
+// The destinations the admin has not switched off on the Platform Settings page
+// (settings from useSiteSettings; an entry without `setting` is always shown).
+export const visibleDestinations = (settings) =>
+  NAV_DESTINATIONS.filter((d) => !d.setting || settings?.[d.setting] !== false);

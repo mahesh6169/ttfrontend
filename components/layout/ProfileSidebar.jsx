@@ -7,6 +7,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
+import { useSiteSettings } from '@/components/layout/SiteSettingsProvider';
 import {
   FaHeart,
   FaCommentDots,
@@ -42,7 +43,7 @@ const ORGANISER = [
 const MANAGE = [
   { label: 'Listings', href: '/users/profile/manageads', icon: FaBoxOpen },
   { label: 'Events', href: '/users/profile/manageevents', icon: FaCalendarAlt },
-  { label: 'Deals', href: '/users/profile/deals', icon: FaTags },
+  { label: 'Deals', href: '/users/profile/deals', icon: FaTags, setting: 'showDeals' },
   { label: 'Forum', href: '/users/profile/managethreads', icon: FaComments },
 ];
 
@@ -85,6 +86,9 @@ export default function ProfileSidebar({ className = '', onNavigate, onSignout }
 
   const isActive = (href) => pathname === href;
   const organiserItems = ORGANISER.filter((i) => !i.flag || user?.[i.flag]);
+  // Platform Settings switch: Deals off hides its Manage entry too.
+  const siteSettings = useSiteSettings();
+  const manageItems = MANAGE.filter((i) => !i.setting || siteSettings[i.setting] !== false);
   const initial = (user?.name || 'U').charAt(0).toUpperCase();
 
   return (
@@ -126,7 +130,7 @@ export default function ProfileSidebar({ className = '', onNavigate, onSignout }
 
           <GroupLabel>Manage</GroupLabel>
           <div className="space-y-0.5">
-            {MANAGE.map((i) => (
+            {manageItems.map((i) => (
               <NavItem key={i.href} item={i} active={isActive(i.href)} onNavigate={onNavigate} />
             ))}
           </div>

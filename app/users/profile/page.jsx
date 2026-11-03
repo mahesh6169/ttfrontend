@@ -10,6 +10,7 @@ import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
 import ErrorState from '@/components/layout/ErrorState';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
+import { useSiteSettings } from '@/components/layout/SiteSettingsProvider';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -125,17 +126,23 @@ const StarterTile = ({ icon: Icon, title, desc, href }) => (
 );
 
 // New-user / nothing-upcoming state: encourage activity across every vertical, not just events.
-const GetStarted = () => (
-  <div className="py-2">
-    <p className="text-center text-sm text-slate-500 mb-5">Here's what you can do on Desify</p>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <StarterTile icon={FaCalendarAlt} title="Events" desc="Host an event or find one to attend." href="/events" />
-      <StarterTile icon={FaBoxOpen} title="Listings" desc="Post a listing or find local listings." href="/listings" />
-      <StarterTile icon={FaTags} title="Deals" desc="Post a deal or find local deals." href="/deals" />
-      <StarterTile icon={FaComments} title="Forum" desc="Browse topics or create one." href="/threads" />
+// The Deals tile follows the admin's Platform Settings switch.
+const GetStarted = () => {
+  const { showDeals } = useSiteSettings();
+  return (
+    <div className="py-2">
+      <p className="text-center text-sm text-slate-500 mb-5">Here's what you can do on Desify</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <StarterTile icon={FaCalendarAlt} title="Events" desc="Host an event or find one to attend." href="/events" />
+        <StarterTile icon={FaBoxOpen} title="Listings" desc="Post a listing or find local listings." href="/listings" />
+        {showDeals && (
+          <StarterTile icon={FaTags} title="Deals" desc="Post a deal or find local deals." href="/deals" />
+        )}
+        <StarterTile icon={FaComments} title="Forum" desc="Browse topics or create one." href="/threads" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const ProfilePage = () => {
   const { user } = useSelector((state) => state.user);

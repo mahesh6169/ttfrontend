@@ -61,7 +61,7 @@ const AdminSidebar = ({ onLinkClick }) => {
     { label: 'Renewal Events', href: '/admin/profile/events/renewals', icon: <MdEvent /> },
     { label: 'Platform Fees', href: '/admin/profile/events/platformFee', icon: <FaDollarSign /> },
     { label: 'Thread Moderation', href: '/admin/profile/threads/moderation', icon: <BsChatText /> },  
-    { label: 'Settings', href: '/users/admin/settings', icon: <FaCog /> },
+    { label: 'Platform Settings', href: '/admin/profile/settings', icon: <FaCog /> },
   ];
 
   // Check if current path is within sections

@@ -5,7 +5,8 @@ import { NextResponse } from 'next/server';
 // Called only by the backend (ttbackendflyio utils/refreshFrontendCache.js) after an edit is
 // saved, so a link shared straight away shows fresh WhatsApp/Facebook previews.
 // REVALIDATION_SECRET is server-only (never NEXT_PUBLIC_) and must match the backend's.
-const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$/;
+// platform-settings = the admin's site switches read by app/layout.jsx (Platform Settings page).
+const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$|^platform-settings$/;
 
 function hasValidSecret(request) {
   const expected = process.env.REVALIDATION_SECRET;
