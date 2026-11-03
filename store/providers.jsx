@@ -7,16 +7,23 @@ import store from './store';
 import ValidateToken from '@/components/ValidateToken';
 import ValidateAdminToken from '@/components/ValidateAdminToken';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 2,  // 2 minutes before data is considered stale
-      retry: 1,                   // Retry failed requests once
+import { useState } from 'react';
+
+const makeQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 2,  // 2 minutes before data is considered stale
+        retry: 1,                   // Retry failed requests once
+      },
     },
-  },
-});
+  });
 
 export function Providers({ children }) {
+  // One cache per browser session / per server request. A module-level client would be shared
+  // by every server render, so one visitor's cached data (and stale counts) leaked into the next
+  // visitor's page and server-passed initialData was ignored.
+  const [queryClient] = useState(makeQueryClient);
   return (
     <QueryClientProvider client={queryClient}>
       <NuqsAdapter>

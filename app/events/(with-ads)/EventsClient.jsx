@@ -11,7 +11,6 @@ import { format, parse } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { CATEGORY_OPTIONS, needsCommunityField } from '@/components/events/addevents/EventCategories';
-import Link from 'next/link';
 import FilterDropdown from '@/components/events/eventcomponents/FilterDropdown';
 import { FaTimes } from 'react-icons/fa';
 import HomeBannerSlider from '@/components/home/HomeBannerSlider';
@@ -586,16 +585,6 @@ const EventsPage = ({ heading, initialData = null }) => {
               )}
               </div>
             </div>
-          </div>
-
-          {/* Create Event (secondary) - grid-first, sits below the search */}
-          <div className="flex justify-center">
-            <Link
-              href="/events/add"
-              className="inline-flex items-center gap-1 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              + Create Event
-            </Link>
           </div>
 
           {/* Toolbar row: Clear (left, pinned) + chips (scroll, middle) + Sort (right, pinned) */}

@@ -17,6 +17,9 @@ test.describe('events discover page', () => {
     // The seed has more than one page of upcoming events, so the search/filter controls show and
     // the create-event banner (shown only for 12 or fewer) does not.
     await expect(page.getByTestId('events-create-cta')).toHaveCount(0);
+    // Create Event sits beside the page title (same as /listings and /threads), once.
+    await expect(page.getByRole('link', { name: '+ Create Event' })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: '+ Create Event' })).toHaveAttribute('href', '/events/add');
     await expect(page.getByRole('button', { name: 'Filter' }).first()).toBeVisible();
     // The old inline hero category dropdown is gone.
     await expect(page.getByText('Select Category')).toHaveCount(0);
