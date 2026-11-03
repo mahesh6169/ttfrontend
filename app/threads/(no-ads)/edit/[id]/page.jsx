@@ -33,7 +33,7 @@ const EditThreadPage = () => {
     question: '',
     category: '',
     communities: [],
-    images: [],
+    allowChat: true,
     suburb: {
       name: '',
       state: '',
@@ -53,12 +53,9 @@ const EditThreadPage = () => {
     },
   });
 
-  const [existingImages, setExistingImages] = useState([]);
-  const [preview, setPreview] = useState([]);
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
-  const fileInputRef = useRef(null);
   const authorSectionRef = useRef(null);
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [updatedThread, setUpdatedThread] = useState(null);
@@ -79,7 +76,7 @@ const EditThreadPage = () => {
         question: thread.question || '',
         category: thread.category || '',
         communities: thread.communities || [],
-        images: [],
+        allowChat: thread.allowChat !== false,
         suburb: thread.suburb || {
           name: '',
           state: '',
@@ -100,8 +97,6 @@ const EditThreadPage = () => {
       };
 
       setFormData(updatedFormData);
-      setExistingImages(thread.images || []);
-      setPreview((thread.images || []).map((img) => img.url));
 
       if (thread.suburb && thread.suburb.name) {
         setLocationInput(`${thread.suburb.name}, ${thread.suburb.state} ${thread.suburb.postalCode}`);
@@ -126,54 +121,6 @@ const EditThreadPage = () => {
   const handleQuestionChange = (html) => {
     setFormData((prev) => ({ ...prev, question: html }));
     if (errors.question) setErrors((prev) => ({ ...prev, question: '' }));
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const totalImages = existingImages.length + preview.length - existingImages.length + files.length;
-
-    if (totalImages > 10) {
-      toast.error('You can upload up to 10 images only.');
-      return;
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    const validFiles = files.filter((file) => {
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`Unsupported file type: ${file.name}. Only JPEG, PNG, and WebP formats are allowed.`);
-        return false;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} is too large. Each image must be under 10MB.`);
-        return false;
-      }
-      return true;
-    });
-
-    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-    setPreview((prev) => [...prev, ...newPreviews]);
-
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...validFiles],
-    }));
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleRemoveImage = (index) => {
-    if (index < existingImages.length) {
-      const updated = [...existingImages];
-      updated.splice(index, 1);
-      setExistingImages(updated);
-    } else {
-      const adjustedIndex = index - existingImages.length;
-      setFormData((prev) => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== adjustedIndex),
-      }));
-    }
-    setPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLocationInputChange = (e) => {
@@ -264,7 +211,7 @@ const EditThreadPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, question, category, images, suburb } = formData;
+    const { title, question, category, suburb } = formData;
     const newErrors = {};
 
     if (!title.trim()) newErrors.title = 'Title is required';
@@ -317,10 +264,10 @@ const EditThreadPage = () => {
       }));
     }
 
-    existingImages.forEach((img) =>
-      formPayload.append('existingImages', JSON.stringify(img))
-    );
-    images.forEach((file) => formPayload.append('images', file));
+    // Feature 1012: pictures live inside the post; the server reads them from the text and
+    // deletes any picture taken out of it.
+    formPayload.append('picturesInText', 'true');
+    formPayload.append('allowChat', formData.allowChat ? 'true' : 'false');
 
     const result = await dispatch(
       updateThread({ threadId, formData: formPayload })
@@ -352,9 +299,6 @@ const EditThreadPage = () => {
   const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
     hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
   }`;
-
-  const totalImages = existingImages.length + (preview.length - existingImages.length);
-  const isMaxImagesReached = totalImages >= 10;
 
   if (isLoading) {
     return (
@@ -418,7 +362,7 @@ const EditThreadPage = () => {
               {/* Question/Description */}
               <div>
                 <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                  Description <span className="text-red-500">*</span>
+                  Your post <span className="text-red-500">*</span>
                 </label>
                 <ThreadEditor
                   value={formData.question || ''}
@@ -516,84 +460,21 @@ const EditThreadPage = () => {
                 />
               </div>
 
-              {/* Images */}
+              {/* Group chat switch (feature 1012) */}
               <div className="border-t border-slate-200 pt-4 sm:pt-6">
-                <span className="block font-medium text-slate-600 text-sm sm:text-base">
-                  Upload Images
-                </span>
-                <p className="text-xs text-slate-500 mt-1 mb-3">
-                  JPEG, PNG & WebP · Max 10 · Up to 10MB each · {preview.length}/10 uploaded
-                </p>
-
-                <div>
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    disabled={isMaxImagesReached}
-                    className="hidden"
-                    id="thread-edit-image-upload"
+                    type="checkbox"
+                    name="allowChat"
+                    checked={formData.allowChat}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, allowChat: e.target.checked }))}
+                    className="mt-1 h-5 w-5 accent-teal-700"
                   />
-                  <label
-                    htmlFor="thread-edit-image-upload"
-                    className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      isMaxImagesReached
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
-                    }`}
-                  >
-                    Choose Files
-                  </label>
-                  {isMaxImagesReached && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Maximum reached. Remove images to add new ones.
-                    </p>
-                  )}
-                </div>
-
-                {preview.length > 0 && (
-                  <div className="mt-3 flex gap-3 flex-wrap">
-                    {preview.map((src, idx) => {
-                      const isSaved = idx < existingImages.length;
-                      const fileName = isSaved
-                        ? existingImages[idx]?.originalFilename
-                        : formData.images[idx - existingImages.length]?.name;
-                      return (
-                        <div key={idx} className="relative">
-                          <img
-                            src={src}
-                            alt={fileName || `Image ${idx + 1}`}
-                            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
-                          />
-                          {isSaved ? (
-                            <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              Saved
-                            </span>
-                          ) : (
-                            <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              New
-                            </span>
-                          )}
-                          {fileName && (
-                            <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={fileName}>
-                              {fileName}
-                            </p>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(idx)}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
-                            title="Remove"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  <span>
+                    <span className="block font-medium text-slate-700 text-sm sm:text-base">Allow group chat on this post</span>
+                    <span className="block text-xs text-slate-500">Off: readers see no chat box and nobody can send messages. Earlier messages are kept and come back when you turn it on.</span>
+                  </span>
+                </label>
               </div>
 
               {/* Submit */}

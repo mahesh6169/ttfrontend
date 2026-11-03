@@ -32,7 +32,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import BackButton from '@/components/BackButton';
-import { isRichHtml, tidyLinksInHtml } from '@/utils/helpers/threads/richText';
+import { isRichHtml } from '@/utils/helpers/threads/richText';
+import ThreadContent from '@/components/threads/ThreadContent';
 import EmptyState from '@/components/layout/EmptyState';
 import ErrorState from '@/components/layout/ErrorState';
 import { buildSlugUrl } from '@/utils/slugUtils';
@@ -40,31 +41,11 @@ import ThreadConnectionStatus from '@/components/threads/ThreadConnectionStatus'
 import ThreadSocketListener from '@/components/ThreadSocketListener';
 
 
-// Add this helper function for optimized image URLs
-const getOptimizedImageUrl = (imageObj, size = 'desktop') => {
-  if (!imageObj) return null;
-  if (typeof imageObj === 'string') return imageObj;
-  
-  // Use pre-optimized URLs from backend
-  if (imageObj.optimizedUrls) {
-    if (size === 'fullscreen') return imageObj.optimizedUrls.fullscreen;
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    // Use detail URLs for single view
-    const mobileUrl = imageObj.optimizedUrls.mobileDetail || imageObj.optimizedUrls.mobile;
-    const desktopUrl = imageObj.optimizedUrls.desktopDetail || imageObj.optimizedUrls.desktop;
-    return isMobile ? mobileUrl : desktopUrl;
-  }
-  
-  // Fallback to original URL
-  return imageObj.url || null;
-};
-
 // Thread detail view, rendered by the server-rendered /threads/[slug] page, which
 // seeds `initialThread` (from a server fetch) so the title + question are in the HTML
 // for SEO. Live replies always load client-side via Redux (real-time, not SEO content).
 // (/threads/views/[id] is retired — now a redirect to /threads/[id].)
 const ThreadDetailContent = ({ threadId, initialThread = null }) => {
-  const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_THREAD_IMAGE_URL;
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -99,14 +80,14 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
     state.user.mutedThreads?.includes(threadId)
   );
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentUsefulIndex, setCurrentUsefulIndex] = useState(0);
 
-  // Topic Description read-more (mirrors events' SingleEventCard: line-clamp + fade + teal toggle)
+  // Long posts fold at about one screen with Read more (feature 1012: a height fold, since a
+  // line-clamp cannot fold pictures and picture sets).
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [descriptionOverflow, setDescriptionOverflow] = useState(false);
   const descriptionRef = useRef(null);
+  const descriptionInnerRef = useRef(null);
 
   // Share popover (matches listings/events B5: teal Share button → popover, closes on click-away/Esc)
   const [shareOpen, setShareOpen] = useState(false);
@@ -128,13 +109,16 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const el = descriptionRef.current;
-    if (!el) return;
+    const inner = descriptionInnerRef.current;
+    if (!el || !inner) return;
     const check = () => {
-      setDescriptionOverflow(el.scrollHeight > el.clientHeight + 1);
+      setDescriptionOverflow(inner.scrollHeight > el.clientHeight + 1);
     };
     check();
+    // Watch the content too: pictures load lazily and grow it after the first check.
     const ro = new ResizeObserver(check);
     ro.observe(el);
+    ro.observe(inner);
     return () => ro.disconnect();
   }, [thread?.question, descriptionExpanded]);
   
@@ -378,22 +362,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
     }
   };
   
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) =>
-      thread.images && thread.images.length > 0 ? (prev + 1) % thread.images.length : 0
-    );
-  };
-
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) =>
-      thread.images && thread.images.length > 0
-        ? prev === 0
-          ? thread.images.length - 1
-          : prev - 1
-        : 0
-    );
-  }
-
   const sortedMessages = [...messages].sort(
     (a, b) => b.likes - b.dislikes - (a.likes - a.dislikes)
   );
@@ -440,6 +408,13 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       );
     }    
     
+
+  // Name shown on the post (feature 1012): the author name the writer filled in; otherwise
+  // "Desify Team" for curated accounts; otherwise the account name.
+  const postedByName =
+    thread.author?.name?.trim() || (thread.isCuratedThread ? 'Desify Team' : thread.owner?.name) || '';
+  // Group chat switch (feature 1012). Older threads have no field: chat is on.
+  const chatOn = thread.allowChat !== false;
 
   // Author "About" block — rendered inline on mobile, and as a sidebar card on desktop (under Share).
   const hasAuthorDetails =
@@ -554,132 +529,6 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       <div className="flex-[7] bg-white w-full">
         <div className="w-full">
 
-      {/* Image Section */}
-      <div className="relative w-full mx-auto bg-white overflow-hidden rounded h-[200px] sm:h-[300px] md:h-[400px]">
-        <img
-          src={thread.images?.length > 0 ? getOptimizedImageUrl(thread.images[currentImageIndex]) : FALLBACK_IMAGE}
-          alt="Thread Image"
-          className="object-contain w-full h-full cursor-pointer"
-          onClick={() => setIsFullscreen(true)}
-        />
-        {/* Fullscreen hint */}
-        {thread.images?.length > 0 && (
-          <div 
-            className="absolute bottom-2 left-2 bg-black bg-opacity-60 text-white px-2 py-1 rounded text-xs flex items-center gap-1 pointer-events-none"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-            <span>Click for full view</span>
-          </div>
-        )}
-
-          {thread.images?.length > 1 && (
-            <>
-              <button
-                onClick={handlePrevImage}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
-              >
-                <FaChevronLeft />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
-              >
-                <FaChevronRight />
-              </button>
-              {/* Dots Indicator */}
-              <div className="absolute bottom-2 right-2 flex gap-1.5">
-                {thread.images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      index === currentImageIndex
-                        ? 'w-6 bg-teal-600'
-                        : 'w-2 bg-slate-300 hover:bg-slate-400'
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-      {/* Fullscreen Modal */}
-      {isFullscreen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsFullscreen(false);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setIsFullscreen(false);
-            if (e.key === 'ArrowLeft') handlePrevImage();
-            if (e.key === 'ArrowRight') handleNextImage();
-          }}
-          tabIndex={0}
-          ref={(el) => el?.focus()}
-          onTouchStart={(e) => {
-            const touch = e.touches[0];
-            e.currentTarget.dataset.touchStartX = touch.clientX;
-          }}
-          onTouchEnd={(e) => {
-            const touchStartX = parseFloat(e.currentTarget.dataset.touchStartX || '0');
-            const touchEndX = e.changedTouches[0].clientX;
-            const diff = touchStartX - touchEndX;
-            if (Math.abs(diff) > 50) {
-              if (diff > 0) handleNextImage();
-              else handlePrevImage();
-            }
-          }}
-        >
-          <img
-            src={getOptimizedImageUrl(thread.images[currentImageIndex], 'fullscreen')}
-            alt={thread.title || 'Thread Image'}
-            className="object-contain w-[95vw] h-[95vh] sm:w-[78vw] sm:h-[78vh] rounded shadow-2xl"
-          />
-
-          <button
-            onClick={() => setIsFullscreen(false)}
-            className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-slate-800 p-2 rounded-full shadow hover:bg-white transition"
-          >
-            <FaTimes size={24} />
-          </button>
-
-          {thread.images?.length > 1 && (
-            <>
-              <button
-                onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
-              >
-                <FaChevronLeft size={20} />
-              </button>
-              <button
-                onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm text-slate-800 p-3 rounded-full shadow hover:bg-white transition"
-              >
-                <FaChevronRight size={20} />
-              </button>
-              {/* Dots Indicator */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {thread.images.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                      index === currentImageIndex
-                        ? 'w-8 bg-teal-500'
-                        : 'w-2.5 bg-slate-400 hover:bg-slate-300'
-                    }`}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
       {/* Title Section */}
       {thread.title && (
         <div className="my-2 px-2">
@@ -700,10 +549,10 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
                 <span className="text-slate-600">{thread.category}</span>
               </div>
             )}
-            {thread.owner?.name && (
+            {postedByName && (
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-                <span className="text-slate-600">{thread.isCuratedThread ? 'Desify Team' : thread.owner?.name}</span>
+                <span className="text-slate-600" data-testid="thread-posted-by">{postedByName}</span>
               </div>
             )}
             {thread.createdAt && (
@@ -753,26 +602,28 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         <div className="my-4 mx-2">
           <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Topic Description</h3>
           <div className="relative">
-            {isRichHtml(thread.question) ? (
-              // Rich description (server-sanitised): real bullets, bold, teal links opening in a new tab.
-              <div
-                ref={descriptionRef}
-                className={`thread-rich text-sm sm:text-base text-slate-700 leading-relaxed ${
-                  descriptionExpanded ? '' : 'line-clamp-[20]'
-                }`}
-                dangerouslySetInnerHTML={{ __html: tidyLinksInHtml(thread.question) }}
-              />
-            ) : (
-              // Legacy plain text: today's line-break path, unchanged.
-              <div
-                ref={descriptionRef}
-                className={`text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap ${
-                  descriptionExpanded ? '' : 'line-clamp-[20]'
-                }`}
-              >
-                {thread.question}
+            {/* Folds at about one screen; Read more opens the whole post. */}
+            <div
+              ref={descriptionRef}
+              className={descriptionExpanded ? '' : 'max-h-[80vh] overflow-hidden'}
+              data-testid="thread-post"
+            >
+              <div ref={descriptionInnerRef}>
+                {isRichHtml(thread.question) ? (
+                  // Post (server-sanitised): headings, lists, links (map links with a pin) and pictures
+                  // in the order written.
+                  <ThreadContent
+                    html={thread.question}
+                    className="text-sm sm:text-base text-slate-700 leading-relaxed"
+                  />
+                ) : (
+                  // Legacy plain text: today's line-break path, unchanged.
+                  <div className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    {thread.question}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
             {!descriptionExpanded && descriptionOverflow && (
               <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
             )}
@@ -798,6 +649,8 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         </div>
       )}
 
+{chatOn ? (
+<>
 {/* Message Area — Useful Comments pinned at the top, then the live chat */}
 <div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
 
@@ -1173,6 +1026,12 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
   )}
 
 </div>
+</>
+) : (
+  <p className="my-4 mx-2 rounded border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-600" data-testid="chat-off-note">
+    The author has turned off chat for this post.
+  </p>
+)}
 
         </div>
       </div>
@@ -1180,6 +1039,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
       {/* Desktop Sidebar - Comment + Share */}
       <div className="hidden lg:block flex-[3] sticky top-20 self-start space-y-4">
         {/* Comment Button */}
+        {chatOn && (
         <div className="border border-slate-200 p-4 rounded shadow-md w-full">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">Join the Discussion</h2>
           <p className="text-sm text-slate-600 mb-4">
@@ -1203,6 +1063,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
             <span>Comment</span>
           </button>
         </div>
+        )}
 
         {/* Share - popover trigger */}
         <div className="flex justify-center py-3 px-4">
@@ -1273,6 +1134,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
         </button>
 
         {/* Comment Button */}
+        {chatOn && (
         <button
           onClick={() => {
             const conversationArea = document.getElementById('conversation-area');
@@ -1290,6 +1152,7 @@ const [currentImageIndex, setCurrentImageIndex] = useState(0);
           <FaCommentDots size={16} />
           <span>Comment</span>
         </button>
+        )}
       </div>
 
       {/* Delete confirm dialog — centered modal (mirrors /chat/[type]/[id], style.md §4) */}
