@@ -9,7 +9,8 @@ import { FaBars } from 'react-icons/fa';
 import { CgProfile } from 'react-icons/cg';
 import { LiaSignInAltSolid, LiaSignOutAltSolid, LiaUserPlusSolid } from 'react-icons/lia';
 import { BsChatDots, BsChatDotsFill } from 'react-icons/bs';
-import { NAV_DESTINATIONS } from '@/utils/constants/destinations';
+import { visibleDestinations } from '@/utils/constants/destinations';
+import { useSiteSettings } from '@/components/layout/SiteSettingsProvider';
 import { toast } from 'react-toastify';
 import {
   setInActiveChat,
@@ -21,6 +22,7 @@ const Header = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
+  const siteSettings = useSiteSettings();
   // Mobile/tablet profile drawer (below lg). The burger replaces Signout there; the
   // overlay is the ProfileSidebar with Signout pinned at the bottom.
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -152,7 +154,7 @@ const Header = () => {
             {/* Center Nav - reads the shared destinations list (utils/constants/destinations).
                 Icon sizes are kept per-nav to preserve this nav's look. */}
             <div data-testid="header-nav" className="flex gap-6 mx-auto">
-              {NAV_DESTINATIONS.map((d) => (
+              {visibleDestinations(siteSettings).map((d) => (
                 <NavLink
                   key={d.href}
                   href={d.href}

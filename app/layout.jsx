@@ -12,6 +12,8 @@ import Script from 'next/script';
 import { COMMUNITIES } from '@/utils/constants/communities';
 import { Analytics } from '@vercel/analytics/next';
 import { currentIndexingPolicy } from '@/utils/seo/indexingPolicy';
+import { fetchSiteSettings } from '@/utils/siteSettings/fetchSiteSettings';
+import { SiteSettingsProvider } from '@/components/layout/SiteSettingsProvider';
 
 
 const siteName = process.env.NEXT_PUBLIC_WEBSITE_NAME || 'Desify';
@@ -133,7 +135,10 @@ export const metadata = {
   },
 };
 
-const ParentLayout = ({ children }) => {
+const ParentLayout = async ({ children }) => {
+  // Admin site switches (Platform Settings): which sections the menus show.
+  const siteSettings = await fetchSiteSettings();
+
   // STRUCTURED DATA - Helps Google understand your website structure (not visible to users)
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -196,6 +201,7 @@ const ParentLayout = ({ children }) => {
       </head>
       <body>
         <Providers>
+        <SiteSettingsProvider settings={siteSettings}>
          <SocketListener />
          <StateSelectionWrapper />
           <Header />
@@ -235,6 +241,7 @@ const ParentLayout = ({ children }) => {
             className="toast-container-mobile"
           />
           <Analytics />
+        </SiteSettingsProvider>
         </Providers>
       </body>
     </html>

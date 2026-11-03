@@ -11,11 +11,16 @@ import { format, parse } from 'date-fns';
 import { AUSTRALIAN_STATES } from '@/constants/australianStates';
 import { getCategoryDisplayName } from '@/constants/categories';
 import { CATEGORY_OPTIONS, needsCommunityField } from '@/components/events/addevents/EventCategories';
-import Link from 'next/link';
 import FilterDropdown from '@/components/events/eventcomponents/FilterDropdown';
 import { FaTimes } from 'react-icons/fa';
+import HomeBannerSlider from '@/components/home/HomeBannerSlider';
+import NoUpcomingEvents from '@/components/events/eventcomponents/NoUpcomingEvents';
 
 const libraries = ['places'];
+
+// Up to one page of events (the page size) fits without pagination, so the search/filter/sort
+// controls add nothing; the create-event banner takes their place (default view only).
+const CTA_MAX_EVENTS = 12;
 
 // Generate month options for the dropdown
 const generateMonthOptions = () => {
@@ -93,6 +98,12 @@ const EventsPage = ({ heading, initialData = null }) => {
   const events = data?.events || [];
   const meta = data?.meta || { currentPage: 1, totalPages: 1, totalRecords: 0, itemsPerPage: 12 };
   const status = isLoading ? 'loading' : isError ? 'failed' : 'success';
+
+  // Few upcoming events and nothing filtered: show the create-event banner instead of the
+  // search, Filter, Create Event and Sort controls. A filtered link keeps the controls so the
+  // visitor can always change or clear the filter.
+  const totalEvents = meta.totalRecords ?? events.length;
+  const showCreateCta = isDefaultView && status === 'success' && totalEvents <= CTA_MAX_EVENTS;
 
   // Local state for UI only
   // Separate instances per breakpoint (mirrors /listings) so the mobile and
@@ -256,7 +267,7 @@ const EventsPage = ({ heading, initialData = null }) => {
   };
 
   return (
-    <div className="flex flex-col relative min-h-[calc(100vh-180px)]">
+    <div className={`flex flex-col relative ${showCreateCta ? '' : 'min-h-[calc(100vh-180px)]'}`}>
       {/* Modal Overlay */}
       {showFilters && (
         <div
@@ -418,6 +429,12 @@ const EventsPage = ({ heading, initialData = null }) => {
         {/* Browse hero - one section, single vertical gap (8/12), no card. See layout.md section 1. */}
         <section className="flex flex-col gap-2 sm:gap-3">
           {heading}
+          {showCreateCta ? (
+            <div data-testid="events-create-cta">
+              <HomeBannerSlider placement="events" />
+            </div>
+          ) : (
+          <>
           <div className="w-full">
             {/* Mobile Layout - Stacked */}
             <div className="flex flex-col gap-2 sm:gap-3 max-w-[90%] mx-auto md:hidden">
@@ -570,16 +587,6 @@ const EventsPage = ({ heading, initialData = null }) => {
             </div>
           </div>
 
-          {/* Create Event (secondary) - grid-first, sits below the search */}
-          <div className="flex justify-center">
-            <Link
-              href="/events/add"
-              className="inline-flex items-center gap-1 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              + Create Event
-            </Link>
-          </div>
-
           {/* Toolbar row: Clear (left, pinned) + chips (scroll, middle) + Sort (right, pinned) */}
           <div ref={resultsRef} data-testid="events-toolbar" className="flex items-center gap-2">
             {getActiveFilterCount() > 0 && (
@@ -720,11 +727,17 @@ const EventsPage = ({ heading, initialData = null }) => {
                   )}
                 </div>
               </div>
+          </>
+          )}
         </section>
 
         {/* Event listing (below the hero cluster) */}
         <div className="mt-4">
-          <EventsGrid events={events} eventStatus={status} onRetry={() => refetch()} />
+          {showCreateCta && events.length === 0 ? (
+            <NoUpcomingEvents />
+          ) : (
+            <EventsGrid events={events} eventStatus={status} onRetry={() => refetch()} />
+          )}
         </div>
 
         {/* Pagination - only show when there are events */}

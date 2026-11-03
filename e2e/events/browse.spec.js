@@ -1,5 +1,5 @@
 // Browsing events: the /events discover page (filters, radius, sort), the public organiser page,
-// the Past events strip and blocked-event pages. All anonymous except the organiser manage-list check.
+// the Past events grid and blocked-event pages. All anonymous except the organiser manage-list check.
 import { test, expect } from '@playwright/test';
 import { readSeed } from '../helpers.js';
 
@@ -14,6 +14,12 @@ test.describe('events discover page', () => {
     await page.setViewportSize(MOBILE);
     await page.goto('/events');
     await expect(page.getByPlaceholder('Enter suburb or city').first()).toBeVisible({ timeout: 20_000 });
+    // The seed has more than one page of upcoming events, so the search/filter controls show and
+    // the create-event banner (shown only for 12 or fewer) does not.
+    await expect(page.getByTestId('events-create-cta')).toHaveCount(0);
+    // Create Event sits beside the page title (same as /listings and /threads), once.
+    await expect(page.getByRole('link', { name: '+ Create Event' })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: '+ Create Event' })).toHaveAttribute('href', '/events/add');
     await expect(page.getByRole('button', { name: 'Filter' }).first()).toBeVisible();
     // The old inline hero category dropdown is gone.
     await expect(page.getByText('Select Category')).toHaveCount(0);
@@ -170,7 +176,7 @@ test.describe('public organiser page', () => {
 });
 
 test.describe('past events', () => {
-  test('/events shows a scrollable Past events strip below the grid with featured ended events, including offline ones', async ({ page }) => {
+  test('/events shows Past events as a grid of full cards below the upcoming grid, with featured ended events, including offline ones', async ({ page }) => {
     await page.goto('/events');
 
     const section = page.getByTestId('past-events');
@@ -183,11 +189,13 @@ test.describe('past events', () => {
     // Admin curation: a past event that is NOT featured does not appear.
     await expect(section.getByText('E2E Past Unfeatured Fest')).toHaveCount(0);
 
-    // The strip is a horizontally scrollable container (overflow-x-auto).
-    const scroll = page.getByTestId('past-events-scroll');
-    await expect(scroll).toBeVisible();
-    const overflowX = await scroll.evaluate((el) => getComputedStyle(el).overflowX);
-    expect(['auto', 'scroll']).toContain(overflowX);
+    // Same grid layout as the upcoming events (not a sideways strip), under a centred heading.
+    const grid = page.getByTestId('past-events-grid');
+    await expect(grid).toBeVisible();
+    expect(await grid.evaluate((el) => getComputedStyle(el).display)).toBe('grid');
+    const overflowX = await grid.evaluate((el) => getComputedStyle(el).overflowX);
+    expect(['auto', 'scroll']).not.toContain(overflowX);
+    await expect(section.getByText('Events recently held on Desify')).toBeVisible();
 
     // It sits BELOW the upcoming grid.
     const gridBox = await page.locator('#EventGrid').boundingBox();

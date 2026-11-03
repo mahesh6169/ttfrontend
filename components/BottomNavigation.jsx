@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV_DESTINATIONS } from '@/utils/constants/destinations';
+import { visibleDestinations } from '@/utils/constants/destinations';
+import { useSiteSettings } from '@/components/layout/SiteSettingsProvider';
 
 // Bottom nav holds the public destinations only, read from the shared list
 // (utils/constants/destinations). "My stuff" (profile) lives behind the header burger and
@@ -37,6 +38,7 @@ const isBottomNavExempt = (pathname) => {
 
 const BottomNavigation = () => {
   const pathname = usePathname();
+  const siteSettings = useSiteSettings();
 
   const isActive = (path) => pathname === path || pathname.startsWith(path + '/');
 
@@ -45,7 +47,7 @@ const BottomNavigation = () => {
   return (
     <div data-testid="bottom-nav" className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 md:hidden z-40 safe-area-inset-pb shadow-sm">
       <div className="flex items-center justify-around h-14">
-        {NAV_DESTINATIONS.map((d) => (
+        {visibleDestinations(siteSettings).map((d) => (
           <Link
             key={d.href}
             href={d.href}
