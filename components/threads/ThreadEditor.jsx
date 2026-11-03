@@ -119,7 +119,9 @@ export default function ThreadEditor({ value, onChange, error }) {
         horizontalRule: false,
       }),
       Underline,
-      Link.configure({
+      // Links never "stretch": text typed right after a link (e.g. after linking "click here") is
+      // plain text. Tiptap ties inclusive to autolink by default; autolink still works without it.
+      Link.extend({ inclusive: () => false }).configure({
         autolink: true,        // typed URLs auto-convert as you type
         linkOnPaste: true,     // pasted URLs become links
         openOnClick: false,    // clicking a link in the editor edits, does not navigate
