@@ -30,10 +30,14 @@ export default function useLeaveWarning(active, onLeave) {
         onLeaveRef.current?.();
       }
     };
+    // The tab is really going away (closed, reloaded, or "Leave" chosen in the browser's box).
+    const onPageHide = () => onLeaveRef.current?.();
     window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
     document.addEventListener('click', onClick, true);
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('click', onClick, true);
     };
   }, [active]);

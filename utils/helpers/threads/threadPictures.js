@@ -78,14 +78,16 @@ export const uploadThreadPicture = async (original) => {
 };
 
 /**
- * Feature 1012: the writer cancelled (or left) an unsaved post - ask the server to delete its
- * pictures straight away. The server only deletes pictures this user uploaded that no saved thread
- * uses, so sending every picture of an edited post is safe. Best effort: anything missed is caught
- * by the server's 24-hour tidy-up. keepalive lets the request finish while the page navigates away.
+ * Feature 1012: the writer cancelled (or left) an unsaved post - ask the server to delete the
+ * pictures uploaded in this session and the ones in the post. The server only deletes pictures this
+ * user uploaded that no saved thread uses, so this is safe for an edited thread too. Best effort:
+ * anything missed is caught by the server's 24-hour tidy-up. keepalive lets the request finish while
+ * the page navigates away.
+ * @param {string[]} sessionUrls pictures uploaded while writing
  * @param {string} html the post HTML
  */
-export const discardPostPictures = (html) => {
-  const urls = parsePictures(html).map((p) => p.src);
+export const discardPostPictures = (sessionUrls = [], html = '') => {
+  const urls = [...new Set([...(sessionUrls || []), ...parsePictures(html).map((p) => p.src)])];
   if (!urls.length) return;
   try {
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/threads/pictures/discard`, {

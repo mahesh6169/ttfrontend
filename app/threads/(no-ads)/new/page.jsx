@@ -67,6 +67,9 @@ const CreateThreadPage = () => {
   // title or post, so leaving the page asks first.
   const [step, setStep] = useState(1);
   const [touched, setTouched] = useState(false);
+  // Pictures uploaded in this session - sent on save / cancel so removed ones are deleted.
+  const sessionPicsRef = useRef([]);
+  const notePicture = (src) => { sessionPicsRef.current.push(src); setTouched(true); };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -205,7 +208,7 @@ const CreateThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(formData.question));
+  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -253,6 +256,7 @@ const CreateThreadPage = () => {
 
     // Feature 1012: pictures live inside the post; the server reads them from the text.
     formPayload.append('picturesInText', 'true');
+    formPayload.append('sessionPictures', JSON.stringify(sessionPicsRef.current));
     formPayload.append('allowChat', formData.allowChat ? 'true' : 'false');
 
     const resultAction = await dispatch(createThread(formPayload));
@@ -272,7 +276,7 @@ const CreateThreadPage = () => {
 
   const leavePage = () => {
     if (touched && !window.confirm(LEAVE_MESSAGE)) return;
-    discardPostPictures(formData.question);
+    discardPostPictures(sessionPicsRef.current, formData.question);
     router.back();
   };
 
@@ -280,6 +284,7 @@ const CreateThreadPage = () => {
     setShowSuccessView(false);
     setStep(1);
     setTouched(false);
+    sessionPicsRef.current = [];
     setCreatedThread(null);
     setFormData({
       title: '',
@@ -330,6 +335,7 @@ const CreateThreadPage = () => {
               onTitleChange={handleTitleChange}
               question={formData.question || ''}
               onQuestionChange={handleQuestionChange}
+              onPictureUploaded={notePicture}
               errors={errors}
               onNext={goToDetails}
               onCancel={leavePage}

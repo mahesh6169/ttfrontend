@@ -67,6 +67,9 @@ const EditThreadPage = () => {
   // title or post, so leaving the page asks first.
   const [step, setStep] = useState(1);
   const [touched, setTouched] = useState(false);
+  // Pictures uploaded in this session - sent on save / cancel so removed ones are deleted.
+  const sessionPicsRef = useRef([]);
+  const notePicture = (src) => { sessionPicsRef.current.push(src); setTouched(true); };
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -241,7 +244,7 @@ const EditThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(formData.question));
+  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -284,6 +287,7 @@ const EditThreadPage = () => {
     // Feature 1012: pictures live inside the post; the server reads them from the text and
     // deletes any picture taken out of it.
     formPayload.append('picturesInText', 'true');
+    formPayload.append('sessionPictures', JSON.stringify(sessionPicsRef.current));
     formPayload.append('allowChat', formData.allowChat ? 'true' : 'false');
 
     const result = await dispatch(
@@ -309,7 +313,7 @@ const EditThreadPage = () => {
 
   const handleCancel = () => {
     if (touched && !window.confirm(LEAVE_MESSAGE)) return;
-    if (touched) discardPostPictures(formData.question);
+    if (touched) discardPostPictures(sessionPicsRef.current, formData.question);
     setTouched(false);
     const backTo = localStorage.getItem('cancelRedirectUrl');
     localStorage.removeItem('cancelRedirectUrl');
@@ -347,6 +351,7 @@ const EditThreadPage = () => {
               onTitleChange={handleTitleChange}
               question={formData.question || ''}
               onQuestionChange={handleQuestionChange}
+              onPictureUploaded={notePicture}
               errors={errors}
               onNext={goToDetails}
               onCancel={handleCancel}

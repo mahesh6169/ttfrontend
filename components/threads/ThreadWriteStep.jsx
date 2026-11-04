@@ -6,7 +6,7 @@
 import ThreadEditor from '@/components/threads/ThreadEditor';
 
 export default function ThreadWriteStep({
-  title, onTitleChange, question, onQuestionChange, errors = {}, onNext, onCancel, heading,
+  title, onTitleChange, question, onQuestionChange, errors = {}, onNext, onCancel, heading, onPictureUploaded,
 }) {
   const bar = 'inline-flex items-center gap-1 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors';
   return (
@@ -41,7 +41,7 @@ export default function ThreadWriteStep({
           {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
         </div>
         <div className="mt-4 px-2 sm:px-4">
-          <ThreadEditor variant="page" value={question} onChange={onQuestionChange} error={errors.question} />
+          <ThreadEditor variant="page" value={question} onChange={onQuestionChange} error={errors.question} onPictureUploaded={onPictureUploaded} />
         </div>
       </div>
 

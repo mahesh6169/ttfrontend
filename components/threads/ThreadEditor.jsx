@@ -101,7 +101,9 @@ const countPictures = (editor) => {
 // variant 'page': the full-page writing view (step 1 of creating/editing a thread) - no box around
 // it, the toolbar sticks under the site header while scrolling, and the text sits in a ~720px column
 // (about the width readers see on the thread page).
-export default function ThreadEditor({ value, onChange, error, variant = 'box' }) {
+// onPictureUploaded(src): every picture uploaded in this session (the page sends the list on save /
+// cancel so pictures removed before saving are deleted from storage).
+export default function ThreadEditor({ value, onChange, error, variant = 'box', onPictureUploaded }) {
   const isPage = variant === 'page';
   const fileRef = useRef(null);
   const pendingAddRef = useRef(null); // set when "Add to set" asked for more pictures
@@ -235,7 +237,9 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
     try {
       for (let i = 0; i < files.length; i++) {
         setBusy(`Uploading picture ${i + 1} of ${files.length}...`);
-        uploaded.push(await uploadThreadPicture(files[i]));
+        const pic = await uploadThreadPicture(files[i]);
+        uploaded.push(pic);
+        onPictureUploaded?.(pic.src);
         done = i + 1;
         if (apply?.progress) apply.progress({ previews, done });
         else setUploading((u) => (u ? { ...u, done } : u));
