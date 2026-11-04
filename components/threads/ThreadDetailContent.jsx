@@ -647,7 +647,7 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
 <>
 <h3 className="mx-2 mt-2 pt-6 border-t border-slate-200 text-sm sm:text-base font-semibold text-slate-800">Conversation</h3>
 {/* Message Area — Useful Comments pinned at the top, then the live chat */}
-<div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
+<div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded-xl shadow-sm my-4 mx-2 bg-white flex flex-col overflow-hidden" style={{ maxHeight: '70vh' }}>
 
   {/* Useful Comments — highlighted band inside the conversation (hidden until a comment is liked) */}
   {usefulAnswers.length > 0 && (
@@ -760,7 +760,7 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
   <div
     ref={messagesContainerRef}
     onScroll={handleScroll}
-    className={`flex-1 overflow-y-auto p-3 border-t border-b ${messages.length === 0 ? 'min-h-[200px]' : ''}`}
+    className="flex-1 overflow-y-auto p-3 border-t border-b"
   >
     {messages.length > 0 ? (
       messages.reduce((acc, msg, index) => {
@@ -920,13 +920,9 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
         ];
       }, [])
             ) : (
-              <div 
-                className="flex items-center justify-center h-full min-h-[200px] text-slate-500 relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #f5f5f5 0%, #f9f9f9 50%, #f5f5f5 100%)',
-                }}
-              >
-                <p className="text-sm font-medium text-slate-600">No messages yet. Start the conversation!</p>
+              <div className="flex items-center justify-center gap-2 py-4 text-slate-500">
+                <FaCommentDots className="text-teal-600" aria-hidden="true" />
+                <p className="text-sm">No messages yet. Start the conversation!</p>
               </div>
             )}
   </div>
