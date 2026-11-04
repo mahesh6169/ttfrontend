@@ -230,6 +230,17 @@ test('with nothing highlighted, Link and Map add the link at the cursor; a highl
   await page.goto('/threads/new');
   await expect(editorBody(page)).toBeVisible({ timeout: 20_000 });
   await editorBody(page).click();
+
+  // A highlighted web address fills the box, so Enter is enough.
+  await editorBody(page).pressSequentially('www.example.org');
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.getByRole('button', { name: 'Link' }).click();
+  await expect(page.getByLabel('Link address')).toHaveValue('https://www.example.org');
+  await page.keyboard.press('Enter');
+  await expect(editorBody(page).locator('a[href="https://www.example.org"]')).toHaveCount(1);
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.press('Enter');
+
   await editorBody(page).pressSequentially('Visit ');
 
   // Nothing highlighted: the small box opens at the cursor and the address goes in as a link.
@@ -250,14 +261,6 @@ test('with nothing highlighted, Link and Map add the link at the cursor; a highl
   await page.getByRole('button', { name: 'Save link' }).click();
   await expect(editorBody(page).locator('a[href="https://maps.app.goo.gl/e2eCursor"]')).toHaveText('View on map');
 
-  // A highlighted web address fills the box, so Enter is enough.
-  await page.keyboard.press('Enter');
-  await editorBody(page).pressSequentially('see www.example.org');
-  await selectBack(page, 'www.example.org'.length);
-  await page.getByRole('button', { name: 'Link' }).click();
-  await expect(page.getByLabel('Link address')).toHaveValue('https://www.example.org');
-  await page.keyboard.press('Enter');
-  await expect(editorBody(page).locator('a[href="https://www.example.org"]')).toHaveCount(1);
 
   // Clicking an existing link opens the same box with its address, and it can be removed.
   await editorBody(page).locator('a[href="https://example.com/menu"]').click();
