@@ -591,7 +591,7 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
 
       {/* Topic Description Section */}
       {thread.question && (
-        <div className="my-4 mx-2">
+        <div className="mt-4 mb-8 mx-2">
           <h3 className="text-sm sm:text-base font-semibold text-slate-800 pb-2 border-b border-slate-200 mb-3">Topic Description</h3>
           <div className="relative">
             {/* Folds at about one screen; Read more opens the whole post. */}
@@ -617,17 +617,19 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
               </div>
             </div>
             {!descriptionExpanded && descriptionOverflow && (
-              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
             )}
           </div>
           {(descriptionOverflow || descriptionExpanded) && (
-            <button
-              type="button"
-              onClick={() => setDescriptionExpanded((e) => !e)}
-              className="mt-2 text-teal-700 hover:text-teal-800 font-semibold text-sm underline"
-            >
-              {descriptionExpanded ? 'Read less' : 'Read more'}
-            </button>
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setDescriptionExpanded((e) => !e)}
+                className="rounded-full border border-teal-600 px-5 py-1.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+              >
+                {descriptionExpanded ? 'Read less' : 'Read more'}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -643,6 +645,7 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
 
 {chatOn ? (
 <>
+<h3 className="mx-2 mt-2 pt-6 border-t border-slate-200 text-sm sm:text-base font-semibold text-slate-800">Conversation</h3>
 {/* Message Area — Useful Comments pinned at the top, then the live chat */}
 <div ref={chatRef} id="conversation-area" className="border border-slate-200 rounded shadow-sm my-4 mx-2 bg-white flex flex-col" style={{ maxHeight: '70vh' }}>
 
