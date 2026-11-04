@@ -2,6 +2,7 @@
 // Pictures are shrunk on the person's device first (max 2000px on the longest side), so a 5MB
 // phone photo goes up as roughly 0.3-0.6MB. The server checks type/size again and stores it.
 import axios from '@/utils/axiosConfig';
+import { parsePictures } from '@/utils/helpers/threads/richText';
 
 export const PICTURE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 export const PICTURE_MAX_BYTES = 10 * 1024 * 1024;
@@ -74,4 +75,28 @@ export const uploadThreadPicture = async (original) => {
     height: res.data.height || height,
     alt: String(original?.name || '').replace(/\.[a-z0-9]+$/i, '').slice(0, 200),
   };
+};
+
+/**
+ * Feature 1012: the writer cancelled (or left) an unsaved post - ask the server to delete its
+ * pictures straight away. The server only deletes pictures this user uploaded that no saved thread
+ * uses, so sending every picture of an edited post is safe. Best effort: anything missed is caught
+ * by the server's 24-hour tidy-up. keepalive lets the request finish while the page navigates away.
+ * @param {string} html the post HTML
+ */
+export const discardPostPictures = (html) => {
+  const urls = parsePictures(html).map((p) => p.src);
+  if (!urls.length) return;
+  try {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/threads/pictures/discard`, {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(process.env.NEXT_PUBLIC_FRONTEND_API_KEY ? { 'x-api-key': process.env.NEXT_PUBLIC_FRONTEND_API_KEY } : {}),
+      },
+      body: JSON.stringify({ urls }),
+    }).catch(() => {});
+  } catch { /* best effort */ }
 };

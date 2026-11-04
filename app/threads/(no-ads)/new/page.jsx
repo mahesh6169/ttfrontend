@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
 import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
+import { discardPostPictures } from '@/utils/helpers/threads/threadPictures';
 import useLeaveWarning, { LEAVE_MESSAGE } from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
@@ -204,7 +205,7 @@ const CreateThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView);
+  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -271,6 +272,7 @@ const CreateThreadPage = () => {
 
   const leavePage = () => {
     if (touched && !window.confirm(LEAVE_MESSAGE)) return;
+    discardPostPictures(formData.question);
     router.back();
   };
 

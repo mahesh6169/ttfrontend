@@ -12,6 +12,7 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
 import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
+import { discardPostPictures } from '@/utils/helpers/threads/threadPictures';
 import useLeaveWarning, { LEAVE_MESSAGE } from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { needsCommunityField } from '@/components/threads/categories';
@@ -240,7 +241,7 @@ const EditThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView);
+  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -308,6 +309,7 @@ const EditThreadPage = () => {
 
   const handleCancel = () => {
     if (touched && !window.confirm(LEAVE_MESSAGE)) return;
+    if (touched) discardPostPictures(formData.question);
     setTouched(false);
     const backTo = localStorage.getItem('cancelRedirectUrl');
     localStorage.removeItem('cancelRedirectUrl');

@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const LEAVE_MESSAGE = "Leave the page? Your post won't be saved.";
 
 // Feature 1012: warn before a half-written thread is lost. Covers closing/reloading the tab (the
 // browser's own "Leave site?" box) and clicking a link to another page inside the site.
-export default function useLeaveWarning(active) {
+// onLeave runs when the writer confirms leaving through a link (e.g. to throw away unsaved pictures).
+export default function useLeaveWarning(active, onLeave) {
+  const onLeaveRef = useRef(onLeave);
+  onLeaveRef.current = onLeave;
   useEffect(() => {
     if (!active) return undefined;
     const onBeforeUnload = (e) => {
@@ -23,6 +26,8 @@ export default function useLeaveWarning(active) {
       if (!window.confirm(LEAVE_MESSAGE)) {
         e.preventDefault();
         e.stopPropagation();
+      } else {
+        onLeaveRef.current?.();
       }
     };
     window.addEventListener('beforeunload', onBeforeUnload);
