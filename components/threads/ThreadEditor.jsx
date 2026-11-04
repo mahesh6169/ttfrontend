@@ -228,18 +228,23 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
 
     const uploaded = [];
     const previews = files.map((f) => URL.createObjectURL(f));
-    setUploading({ previews, done: 0, ...cursorSpot(360) });
+    // "Add to set": the set shows the uploading tiles itself; otherwise a card at the cursor.
+    const report = apply?.progress || ((u) => setUploading(u ? { ...u, ...cursorSpot(360) } : null));
+    let done = 0;
+    report({ previews, done });
     try {
       for (let i = 0; i < files.length; i++) {
         setBusy(`Uploading picture ${i + 1} of ${files.length}...`);
         uploaded.push(await uploadThreadPicture(files[i]));
-        setUploading((u) => (u ? { ...u, done: i + 1 } : u));
+        done = i + 1;
+        if (apply?.progress) apply.progress({ previews, done });
+        else setUploading((u) => (u ? { ...u, done } : u));
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Picture upload failed. Please try again.');
     } finally {
       setBusy('');
-      setUploading(null);
+      report(null);
       previews.forEach((u) => URL.revokeObjectURL(u));
     }
     if (!uploaded.length) return;

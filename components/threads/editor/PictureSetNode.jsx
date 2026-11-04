@@ -2,6 +2,7 @@
 // A picture block inside the thread editor (feature 1012): one picture, or several as a picture set.
 // Stored in the post HTML as <div data-pictures=""><img src=... width=... height=...>...</div>,
 // exactly the shape the server allows (ttbackendflyio utils/helpers/shared/sanitize.js).
+import { useState } from 'react';
 import { Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import { FaChevronLeft, FaChevronRight, FaPlus, FaTimes, FaTrash } from 'react-icons/fa';
@@ -16,6 +17,8 @@ const toPicture = (img) => ({
 
 function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, extension, selected }) {
   const pictures = node.attrs.pictures || [];
+  // "Add to set" uploads in progress: { previews: [url], done } - shown as faded tiles in this set.
+  const [pending, setPending] = useState(null);
 
   // Read the latest pictures from the document (an upload may finish after other edits).
   const latest = () => {
@@ -39,9 +42,11 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
   };
 
   const addMore = () => {
-    extension.options.onAddToSet?.((added) => {
+    const apply = (added) => {
       if (added?.length) updateAttributes({ pictures: [...latest(), ...added] });
-    });
+    };
+    apply.progress = setPending; // the editor reports upload progress here
+    extension.options.onAddToSet?.(apply);
   };
 
   const label = pictures.length === 1 ? '1 picture' : `Picture set - ${pictures.length} pictures`;
@@ -110,8 +115,20 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
           )}
           </div>
         ))}
+        {pending?.previews.map((src, i) => (
+          <div key={src} className="relative h-20 overflow-hidden rounded sm:h-24" data-testid="picture-uploading-tile">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" className={`h-full w-full object-cover ${i < pending.done ? '' : 'opacity-50'}`} />
+            {i >= pending.done && (
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </span>
+            )}
+          </div>
+        ))}
         <button
           type="button"
+          disabled={!!pending}
           onClick={addMore}
           className="flex h-20 flex-col items-center justify-center gap-1 rounded border-2 border-dashed border-slate-300 text-xs font-semibold text-slate-600 hover:bg-slate-50 sm:h-24"
         >
