@@ -50,6 +50,10 @@ export function useSearchThreads({ cat, communities, state, q, sort, page, locat
     // Server pre-fill for the default view (SSR): seeds the grid so first paint shows real
     // threads, not a skeleton. Undefined for filtered/paged views, which fetch normally.
     initialData,
+    // Feature 1012: always check for fresh results when the list is opened, so a just-created or
+    // just-deleted thread shows correctly (the server copy above is already refreshed on change).
+    staleTime: 0,
+    refetchOnMount: 'always',
     // Keep previous results visible while new ones load (no flash of empty)
     placeholderData: (previousData) => previousData,
   });

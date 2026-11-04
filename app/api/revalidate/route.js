@@ -6,7 +6,8 @@ import { NextResponse } from 'next/server';
 // saved, so a link shared straight away shows fresh WhatsApp/Facebook previews.
 // REVALIDATION_SECRET is server-only (never NEXT_PUBLIC_) and must match the backend's.
 // platform-settings = the admin's site switches read by app/layout.jsx (Platform Settings page).
-const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$|^platform-settings$/;
+// threads-list = the forum landing's first page and the home page's latest threads (feature 1012).
+const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$|^platform-settings$|^threads-list$/;
 
 function hasValidSecret(request) {
   const expected = process.env.REVALIDATION_SECRET;

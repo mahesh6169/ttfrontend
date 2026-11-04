@@ -32,7 +32,7 @@ async function fetchHomeData() {
       }),
       fetch(`${API_BASE_URL}/home/threads`, {
         headers: { 'x-api-key': API_KEY },
-        next: { revalidate: 300 },
+        next: { revalidate: 300, tags: ['threads-list'] },
       }),
     ]);
 
