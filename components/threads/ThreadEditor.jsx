@@ -114,6 +114,7 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box', 
   // Small link box that pops up at the cursor: { mode: 'link'|'map', value, error, top, left }
   const [linkPanel, setLinkPanel] = useState(null);
   const wrapRef = useRef(null);
+  const sentRef = useRef(null); // last HTML sent up by onUpdate (see the sync effect below)
   const openLinkRef = useRef(null); // lets a click on a link inside the editor open the box
 
   const editor = useEditor({
@@ -166,15 +167,21 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box', 
     },
     onUpdate: ({ editor }) => {
       // Empty editor -> '' so the parent's required-field check still fires (getHTML would be <p></p>).
-      onChange(editor.isEmpty ? '' : editor.getHTML());
+      const html = editor.isEmpty ? '' : editor.getHTML();
+      sentRef.current = html;
+      onChange(html);
     },
   });
 
   // Keep the editor in sync when the value arrives/changes from OUTSIDE (e.g. the edit page loading a
   // thread). The guard skips the editor's own updates, so typing never causes a cursor jump.
+  // sentRef: the last HTML the editor itself sent up. When the parent hands that back a moment later
+  // (fast typing: the editor is already a keystroke ahead), it is not an outside change - resetting
+  // the content then would drop the newest keystroke and the cursor/selection.
   useEffect(() => {
     if (!editor) return;
     const incoming = value || '';
+    if (incoming === sentRef.current) return;
     if (incoming !== (editor.isEmpty ? '' : editor.getHTML())) {
       editor.commands.setContent(incoming, { emitUpdate: false });
     }
