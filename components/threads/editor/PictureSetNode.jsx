@@ -27,11 +27,25 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
     return current?.attrs?.pictures || pictures;
   };
 
-  const removeAt = (i) => {
-    const next = latest().filter((_, k) => k !== i);
-    if (next.length) updateAttributes({ pictures: next });
-    else deleteNode();
+  // Removing a picture deletes it from storage straight away (owner's choice), so the removal is
+  // kept out of Undo - Undo cannot bring back a picture that no longer exists.
+  const removePictures = (gone, next) => {
+    const pos = typeof getPos === 'function' ? getPos() : null;
+    if (pos == null) return;
+    const { tr } = editor.state;
+    if (next.length) tr.setNodeMarkup(pos, undefined, { ...node.attrs, pictures: next });
+    else tr.delete(pos, pos + node.nodeSize);
+    tr.setMeta('addToHistory', false);
+    editor.view.dispatch(tr);
+    extension.options.onPicturesRemoved?.(gone.map((p) => p.src));
   };
+
+  const removeAt = (i) => {
+    const list = latest();
+    removePictures([list[i]], list.filter((_, k) => k !== i));
+  };
+
+  const removeAll = () => removePictures(latest(), []);
 
   const moveBy = (i, d) => {
     const list = [...latest()];
@@ -61,7 +75,7 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
         <span className="font-semibold text-slate-800" data-drag-handle="">{label}</span>
         <button
           type="button"
-          onClick={deleteNode}
+          onClick={removeAll}
           className="inline-flex items-center gap-1 rounded border border-slate-200 px-2 py-1 hover:bg-slate-50"
         >
           <FaTrash aria-hidden="true" /> Remove all
@@ -147,7 +161,7 @@ const PictureSet = Node.create({
   selectable: true,
 
   addOptions() {
-    return { onAddToSet: null };
+    return { onAddToSet: null, onPicturesRemoved: null };
   },
 
   addAttributes() {

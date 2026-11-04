@@ -22,7 +22,7 @@ import PictureSet from '@/components/threads/editor/PictureSetNode';
 import {
   tidyUrl, looksLikeUrl, normaliseLinkInput, isGoogleMapsUrl, THREAD_PICTURE_LIMIT,
 } from '@/utils/helpers/threads/richText';
-import { pictureProblem, uploadThreadPicture } from '@/utils/helpers/threads/threadPictures';
+import { pictureProblem, uploadThreadPicture, discardPostPictures } from '@/utils/helpers/threads/threadPictures';
 
 // Keeps a link's visible text equal to the tidied display of its href while the author types or
 // pastes a web address (featureplans/threads-url-display.md). Links on the writer's own words
@@ -144,7 +144,12 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box', 
         HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer', class: 'text-teal-700 underline' },
       }),
       TidyLinkText,
-      PictureSet.configure({ onAddToSet: (apply) => addToSetRef.current?.(apply) }),
+      PictureSet.configure({
+        onAddToSet: (apply) => addToSetRef.current?.(apply),
+        // The server deletes only this user's pictures that no saved thread uses: a picture of a
+        // saved thread being edited stays until Update.
+        onPicturesRemoved: (urls) => discardPostPictures(urls),
+      }),
     ],
     content: value || '',
     editorProps: {
