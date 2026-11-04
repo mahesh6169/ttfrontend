@@ -15,7 +15,7 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 import ConfirmModal from '@/components/ConfirmModal';
 import { MdNotifications, MdNotificationsOff } from 'react-icons/md';
-import { FaEye, FaPen, FaTrash, FaRegImage } from 'react-icons/fa';
+import { FaPen, FaTrash, FaRegImage } from 'react-icons/fa';
 import { stripHtmlToText, parsePictures, sizedPictureUrl } from '@/utils/helpers/threads/richText';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
@@ -143,7 +143,6 @@ const ManageThreads = () => {
             const firstPicture = parsePictures(thread.question)[0]?.src;
             const preview = stripHtmlToText(thread.question);
             const viewUrl = buildSlugUrl('thread', thread.title, thread._id);
-            const action = 'flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition-colors';
 
             return (
               <div
@@ -152,7 +151,7 @@ const ManageThreads = () => {
                 className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
                 {/* First picture of the post */}
-                <Link href={viewUrl} className="block aspect-[16/9] bg-slate-100">
+                <Link href={viewUrl} className="block h-32 bg-slate-100 sm:h-36">
                   {firstPicture ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={sizedPictureUrl(firstPicture, 600)} alt="" loading="lazy" className="h-full w-full object-cover" />
@@ -178,43 +177,39 @@ const ManageThreads = () => {
                   </Link>
                   {preview && <p className="mt-1 line-clamp-2 text-xs text-slate-600">{preview}</p>}
 
-                  <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-100 pt-2.5 mt-3">
-                    <span className="text-[11px] text-slate-500">
-                      {new Date(thread.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                    <div className="flex items-center gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => toggleMute(thread._id, isMuted)}
-                        aria-label={isMuted ? 'Turn notifications on' : 'Mute notifications'}
-                        title={isMuted ? 'Notifications muted - turn on' : 'Mute notifications'}
-                        className={`${action} ${isMuted ? 'text-red-500 hover:bg-red-50' : 'hover:bg-slate-100 hover:text-slate-700'}`}
-                      >
-                        {isMuted ? <MdNotificationsOff size={18} /> : <MdNotifications size={18} />}
-                      </button>
-                      <Link href={viewUrl} aria-label="View" title="View" className={`${action} hover:bg-slate-100 hover:text-slate-700`}>
-                        <FaEye size={15} />
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleEditClick(thread._id)}
-                        aria-label="Edit"
-                        title="Edit"
-                        className={`${action} hover:bg-teal-50 hover:text-teal-700`}
-                      >
-                        <FaPen size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(thread)}
-                        aria-label="Delete"
-                        title="Delete"
-                        className={`${action} hover:bg-red-50 hover:text-red-600`}
-                      >
-                        <FaTrash size={13} />
-                      </button>
-                    </div>
-                  </div>
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    {new Date(thread.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+
+                  {/* Notifications for this topic, on its own row */}
+                  <button
+                    type="button"
+                    onClick={() => toggleMute(thread._id, isMuted)}
+                    className={`mt-auto flex items-center gap-1.5 pt-3 text-xs font-medium ${
+                      isMuted ? 'text-red-600 hover:text-red-700' : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    {isMuted ? <MdNotificationsOff size={16} aria-hidden="true" /> : <MdNotifications size={16} aria-hidden="true" />}
+                    <span>{isMuted ? 'Notifications muted - turn on' : 'Mute notifications'}</span>
+                  </button>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 border-t border-slate-100 text-sm font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => handleEditClick(thread._id)}
+                    className="flex items-center justify-center gap-1.5 border-r border-slate-100 py-2.5 text-teal-700 hover:bg-teal-50"
+                  >
+                    <FaPen size={12} aria-hidden="true" /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClick(thread)}
+                    className="flex items-center justify-center gap-1.5 py-2.5 text-red-600 hover:bg-red-50"
+                  >
+                    <FaTrash size={12} aria-hidden="true" /> Delete
+                  </button>
                 </div>
               </div>
             );
