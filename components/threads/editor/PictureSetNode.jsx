@@ -48,7 +48,7 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
 
   return (
     <NodeViewWrapper
-      className={`my-3 rounded-lg border-2 p-2 ${selected ? 'border-teal-600' : 'border-slate-200'}`}
+      className={`my-3 rounded-lg border p-2 ${selected ? 'border-slate-400' : 'border-slate-200'}`}
       data-testid="editor-picture-block"
       contentEditable={false}
     >

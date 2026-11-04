@@ -107,6 +107,8 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
   const pendingAddRef = useRef(null); // set when "Add to set" asked for more pictures
   const addToSetRef = useRef(null);
   const [busy, setBusy] = useState(''); // "Uploading 1 of 3..."
+  // While pictures upload: small previews of the picked files shown at the cursor right away.
+  const [uploading, setUploading] = useState(null); // { previews: [url], done, top, left }
   // Small link box that pops up at the cursor: { mode: 'link'|'map', value, error, top, left }
   const [linkPanel, setLinkPanel] = useState(null);
   const wrapRef = useRef(null);
@@ -172,6 +174,23 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, editor]);
 
+  // Where to show a small pop-up (link box, upload previews): just under the cursor, kept inside the
+  // writing area.
+  const cursorSpot = (boxWidth = 320) => {
+    let top = 8;
+    let left = 8;
+    const wrap = wrapRef.current?.getBoundingClientRect();
+    try {
+      const c = editor.view.coordsAtPos(editor.state.selection.to);
+      if (wrap) {
+        const w = Math.min(boxWidth, wrap.width - 16);
+        top = c.bottom - wrap.top + 6;
+        left = Math.max(8, Math.min(c.left - wrap.left, wrap.width - w - 8));
+      }
+    } catch { /* keep the default spot */ }
+    return { top, left };
+  };
+
   /* ---------------------------------- Pictures ---------------------------------- */
 
   // "Add to set" inside a picture block: pick files, then hand the uploaded pictures back.
@@ -208,15 +227,20 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
     }
 
     const uploaded = [];
+    const previews = files.map((f) => URL.createObjectURL(f));
+    setUploading({ previews, done: 0, ...cursorSpot(360) });
     try {
       for (let i = 0; i < files.length; i++) {
         setBusy(`Uploading picture ${i + 1} of ${files.length}...`);
         uploaded.push(await uploadThreadPicture(files[i]));
+        setUploading((u) => (u ? { ...u, done: i + 1 } : u));
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Picture upload failed. Please try again.');
     } finally {
       setBusy('');
+      setUploading(null);
+      previews.forEach((u) => URL.revokeObjectURL(u));
     }
     if (!uploaded.length) return;
 
@@ -244,18 +268,7 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
         if (href) keep = href;
       }
     }
-    // Place the box just under the cursor, kept inside the writing area.
-    let top = 8;
-    let left = 8;
-    const wrap = wrapRef.current?.getBoundingClientRect();
-    try {
-      const c = editor.view.coordsAtPos(to);
-      if (wrap) {
-        const boxWidth = Math.min(320, wrap.width - 16);
-        top = c.bottom - wrap.top + 6;
-        left = Math.max(8, Math.min(c.left - wrap.left, wrap.width - boxWidth - 8));
-      }
-    } catch { /* keep the default spot */ }
+    const { top, left } = cursorSpot();
     setLinkPanel({ mode: useMode, value: keep, error: '', top, left, onLink });
   };
   openLinkRef.current = openLinkPanel;
@@ -360,13 +373,33 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box' }
           />
         </div>
 
-        {busy && (
-          <div role="status" className="border-b border-slate-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-800">
-            {busy}
+        <EditorContent editor={editor} />
+
+        {/* Uploading: previews of the picked pictures appear at the cursor straight away, each one
+            dimmed with a spinner until it is uploaded. */}
+        {uploading && (
+          <div
+            role="status"
+            data-testid="picture-uploading"
+            style={{ top: uploading.top, left: uploading.left }}
+            className="absolute z-20 w-[min(22.5rem,calc(100%-1rem))] rounded-lg border border-slate-200 bg-white p-2 shadow-md"
+          >
+            <p className="mb-1.5 text-xs font-medium text-slate-600">{busy || 'Uploading...'}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {uploading.previews.map((src, i) => (
+                <div key={src} className="relative h-16 w-16 overflow-hidden rounded">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" className={`h-full w-full object-cover ${i < uploading.done ? '' : 'opacity-50'}`} />
+                  {i >= uploading.done && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
-
-        <EditorContent editor={editor} />
 
         {/* Link / Map box: a small one-line box at the cursor. Enter or the tick saves; Esc or
             clicking away closes it. */}
