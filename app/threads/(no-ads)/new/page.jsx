@@ -10,7 +10,7 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
 import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
 import { discardPostPictures } from '@/utils/helpers/threads/threadPictures';
-import useLeaveWarning, { LEAVE_MESSAGE } from '@/hooks/threads/useLeaveWarning';
+import useLeaveWarning from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
@@ -208,7 +208,7 @@ const CreateThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
+  const { confirmLeave, leaveModal } = useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -275,9 +275,7 @@ const CreateThreadPage = () => {
   };
 
   const leavePage = () => {
-    if (touched && !window.confirm(LEAVE_MESSAGE)) return;
-    discardPostPictures(sessionPicsRef.current, formData.question);
-    router.back();
+    confirmLeave(() => router.back());
   };
 
   const resetForm = () => {
@@ -320,6 +318,7 @@ const CreateThreadPage = () => {
 
   return (
     <div>
+      {leaveModal}
       <RequireVerifiedAccount>
         {showSuccessView && createdThread ? (
           <div className="mx-auto w-full max-w-3xl"><SuccessView
@@ -348,7 +347,7 @@ const CreateThreadPage = () => {
               <button
                 type="button"
                 onClick={leavePage}
-                className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 ✕ Cancel
               </button>
@@ -357,7 +356,7 @@ const CreateThreadPage = () => {
                 onClick={backToWriting}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                ← Back to writing
+                ← Back
               </button>
             </div>
 

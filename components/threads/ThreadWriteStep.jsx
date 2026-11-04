@@ -45,11 +45,6 @@ export default function ThreadWriteStep({
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <button type="button" onClick={onNext} className="rounded-lg bg-teal-700 px-8 py-3 text-sm font-semibold text-white hover:bg-teal-800 sm:text-base">
-          Next: details
-        </button>
-      </div>
     </div>
   );
 }

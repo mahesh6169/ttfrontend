@@ -63,7 +63,6 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
     extension.options.onAddToSet?.(apply);
   };
 
-  const label = pictures.length === 1 ? '1 picture' : `Picture set - ${pictures.length} pictures`;
 
   return (
     <NodeViewWrapper
@@ -72,7 +71,7 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
       contentEditable={false}
     >
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
-        <span className="font-semibold text-slate-800" data-drag-handle="">{label}</span>
+        <span data-drag-handle="" />
         <button
           type="button"
           onClick={removeAll}

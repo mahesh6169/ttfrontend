@@ -398,7 +398,7 @@ export default function ThreadEditor({ value, onChange, error, variant = 'box', 
             style={{ top: uploading.top, left: uploading.left }}
             className="absolute z-20 w-[min(22.5rem,calc(100%-1rem))] rounded-lg border border-slate-200 bg-white p-2 shadow-md"
           >
-            <p className="mb-1.5 text-xs font-medium text-slate-600">{busy || 'Uploading...'}</p>
+            <p className="mb-1.5 text-xs font-medium text-slate-600">Uploading...</p>
             <div className="flex flex-wrap gap-1.5">
               {uploading.previews.map((src, i) => (
                 <div key={src} className="relative h-16 w-16 overflow-hidden rounded">

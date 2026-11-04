@@ -13,7 +13,7 @@ import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
 import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
 import { discardPostPictures } from '@/utils/helpers/threads/threadPictures';
-import useLeaveWarning, { LEAVE_MESSAGE } from '@/hooks/threads/useLeaveWarning';
+import useLeaveWarning from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { needsCommunityField } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
@@ -244,7 +244,7 @@ const EditThreadPage = () => {
     window.scrollTo({ top: 0 });
   };
 
-  useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
+  const { confirmLeave, leaveModal } = useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -312,12 +312,12 @@ const EditThreadPage = () => {
   };
 
   const handleCancel = () => {
-    if (touched && !window.confirm(LEAVE_MESSAGE)) return;
-    if (touched) discardPostPictures(sessionPicsRef.current, formData.question);
-    setTouched(false);
-    const backTo = localStorage.getItem('cancelRedirectUrl');
-    localStorage.removeItem('cancelRedirectUrl');
-    router.push(backTo || '/users/profile/managethreads');
+    confirmLeave(() => {
+      setTouched(false);
+      const backTo = localStorage.getItem('cancelRedirectUrl');
+      localStorage.removeItem('cancelRedirectUrl');
+      router.push(backTo || '/users/profile/managethreads');
+    });
   };
 
   const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
@@ -337,6 +337,7 @@ const EditThreadPage = () => {
 
   return (
     <div>
+      {leaveModal}
       <RequireVerifiedAccount>
         {showSuccessView && updatedThread ? (
           <div className="mx-auto w-full max-w-3xl"><SuccessView
@@ -364,7 +365,7 @@ const EditThreadPage = () => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 ✕ Cancel
               </button>
@@ -373,7 +374,7 @@ const EditThreadPage = () => {
                 onClick={backToWriting}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                ← Back to writing
+                ← Back
               </button>
             </div>
 
