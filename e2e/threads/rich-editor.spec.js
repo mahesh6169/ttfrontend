@@ -99,8 +99,8 @@ test('editing a thread reopens the editor with its formatting; adding strikethro
   await editorBody(page).pressSequentially(' meet here');
   await selectBack(page, 'meet here'.length);
   await page.getByRole('button', { name: 'Map' }).click();
-  await page.getByLabel('Google Maps link for the selected words').fill('maps.google.com/?q=Parramatta');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByLabel('Google Maps link').fill('maps.google.com/?q=Parramatta');
+  await page.getByRole('button', { name: 'Save link' }).click();
 
   // Save, then visit the thread page (first visit -> fresh render) and confirm the change.
   await page.getByRole('button', { name: /^Update$/ }).click();
@@ -193,8 +193,8 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await editorBody(page).pressSequentially('Search: click here');
   await selectBack(page, 'click here'.length);
   await page.getByRole('button', { name: 'Link' }).click();
-  await page.getByLabel('Web address for the selected words').fill('google.com');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByLabel('Link address').fill('google.com');
+  await page.getByRole('button', { name: 'Save link' }).click();
   const named = editorBody(page).locator('a', { hasText: 'click here' });
   await expect(named).toHaveAttribute('href', /^https:\/\/google\.com/);
   await expect(named).toHaveText('click here');
@@ -204,10 +204,11 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await editorBody(page).pressSequentially(' and old site');
   await selectBack(page, 'old site'.length);
   await page.getByRole('button', { name: 'Link' }).click();
-  await page.getByLabel('Web address for the selected words').fill('http://example.com');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByLabel('Link address').fill('http://example.com');
+  await page.getByRole('button', { name: 'Save link' }).click();
   await expect(linkError(page)).toContainText('https://');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('link-box')).toHaveCount(0);
   await expect(editorBody(page).locator('a', { hasText: 'old site' })).toHaveCount(0);
 
   // Map button: only Google Maps links are accepted.
@@ -216,12 +217,52 @@ test('the editor makes headings, puts links on chosen words (https only) and Goo
   await editorBody(page).pressSequentially(' near the place');
   await selectBack(page, 'the place'.length);
   await page.getByRole('button', { name: 'Map' }).click();
-  await page.getByLabel('Google Maps link for the selected words').fill('https://example.com');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByLabel('Google Maps link').fill('https://example.com');
+  await page.getByRole('button', { name: 'Save link' }).click();
   await expect(linkError(page)).toContainText('Google Maps');
-  await page.getByLabel('Google Maps link for the selected words').fill('https://maps.app.goo.gl/e2eAbc');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByLabel('Google Maps link').fill('https://maps.app.goo.gl/e2eAbc');
+  await page.getByRole('button', { name: 'Save link' }).click();
   await expect(editorBody(page).locator('a[href="https://maps.app.goo.gl/e2eAbc"]')).toHaveText('the place');
+});
+
+test('with nothing highlighted, Link and Map add the link at the cursor; a highlighted address fills the box; clicking a link edits it', async ({ page }) => {
+  await page.goto('/threads/new');
+  await expect(editorBody(page)).toBeVisible({ timeout: 20_000 });
+  await editorBody(page).click();
+  await editorBody(page).pressSequentially('Visit ');
+
+  // Nothing highlighted: the small box opens at the cursor and the address goes in as a link.
+  await page.getByRole('button', { name: 'Link' }).click();
+  await expect(page.getByTestId('link-box')).toBeVisible();
+  await page.getByLabel('Link address').fill('example.com/menu');
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('link-box')).toHaveCount(0);
+  await expect(editorBody(page).locator('a[href="https://example.com/menu"]')).toHaveCount(1);
+  // Words typed after it are normal text.
+  await editorBody(page).pressSequentially(' today');
+  await expect(editorBody(page).locator('a', { hasText: 'today' })).toHaveCount(0);
+
+  // Map with nothing highlighted adds "View on map" with the pin link.
+  await editorBody(page).pressSequentially(' - ');
+  await page.getByRole('button', { name: 'Map' }).click();
+  await page.getByLabel('Google Maps link').fill('maps.app.goo.gl/e2eCursor');
+  await page.getByRole('button', { name: 'Save link' }).click();
+  await expect(editorBody(page).locator('a[href="https://maps.app.goo.gl/e2eCursor"]')).toHaveText('View on map');
+
+  // A highlighted web address fills the box, so Enter is enough.
+  await page.keyboard.press('Enter');
+  await editorBody(page).pressSequentially('see example.org');
+  await selectBack(page, 'example.org'.length);
+  await page.getByRole('button', { name: 'Link' }).click();
+  await expect(page.getByLabel('Link address')).toHaveValue('https://example.org');
+  await page.keyboard.press('Enter');
+  await expect(editorBody(page).locator('a[href="https://example.org"]')).toHaveCount(1);
+
+  // Clicking an existing link opens the same box with its address, and it can be removed.
+  await editorBody(page).locator('a[href="https://example.com/menu"]').click();
+  await expect(page.getByLabel('Link address')).toHaveValue('https://example.com/menu');
+  await page.getByRole('button', { name: 'Remove link' }).click();
+  await expect(editorBody(page).locator('a[href="https://example.com/menu"]')).toHaveCount(0);
 });
 
 test('the Picture button adds several pictures as one set where the cursor is, and stops at 10 pictures', async ({ page }) => {

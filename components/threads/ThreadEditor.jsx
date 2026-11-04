@@ -16,7 +16,7 @@ import Link from '@tiptap/extension-link';
 import { toast } from 'react-toastify';
 import {
   FaBold, FaItalic, FaUnderline, FaStrikethrough, FaListUl, FaListOl, FaUndo, FaRedo,
-  FaLink, FaMapMarkerAlt, FaImage,
+  FaLink, FaMapMarkerAlt, FaImage, FaCheck, FaUnlink,
 } from 'react-icons/fa';
 import PictureSet from '@/components/threads/editor/PictureSetNode';
 import {
@@ -103,7 +103,10 @@ export default function ThreadEditor({ value, onChange, error }) {
   const pendingAddRef = useRef(null); // set when "Add to set" asked for more pictures
   const addToSetRef = useRef(null);
   const [busy, setBusy] = useState(''); // "Uploading 1 of 3..."
-  const [linkPanel, setLinkPanel] = useState(null); // { mode: 'link'|'map', value, error }
+  // Small link box that pops up at the cursor: { mode: 'link'|'map', value, error, top, left }
+  const [linkPanel, setLinkPanel] = useState(null);
+  const wrapRef = useRef(null);
+  const openLinkRef = useRef(null); // lets a click on a link inside the editor open the box
 
   const editor = useEditor({
     immediatelyRender: false, // required for Next.js SSR to avoid hydration mismatch
@@ -140,6 +143,11 @@ export default function ThreadEditor({ value, onChange, error }) {
       attributes: {
         class:
           'thread-rich thread-editor-content min-h-[12rem] sm:min-h-[10rem] w-full px-3 py-2 text-base sm:text-sm text-slate-700 focus:outline-none',
+      },
+      // Clicking a link while writing opens the small link box to change or remove it.
+      handleClick: (_view, _pos, event) => {
+        if (event.target?.closest?.('a')) setTimeout(() => openLinkRef.current?.(null), 0);
+        return false;
       },
     },
     onUpdate: ({ editor }) => {
@@ -213,16 +221,43 @@ export default function ThreadEditor({ value, onChange, error }) {
 
   /* ---------------------------------- Links ---------------------------------- */
 
+  // Link / Map: a small one-line box pops up at the cursor. Highlighted words become the link;
+  // with nothing highlighted the link is added at the cursor (the address itself, or "View on map").
+  // mode null = opened by clicking an existing link (Link or Map chosen from its address).
   const openLinkPanel = (mode) => {
     if (!editor) return;
+    const { from, to, empty } = editor.state.selection;
     const onLink = editor.isActive('link');
-    if (editor.state.selection.empty && !onLink) {
-      toast.info('Select the words you want to link first.');
-      return;
-    }
     const current = onLink ? editor.getAttributes('link').href || '' : '';
-    const keep = mode === 'map' ? (isGoogleMapsUrl(current) ? current : '') : current;
-    setLinkPanel({ mode, value: keep, error: '' });
+    const useMode = mode || (isGoogleMapsUrl(current) ? 'map' : 'link');
+    let keep = useMode === 'map' ? (isGoogleMapsUrl(current) ? current : '') : current;
+    if (!keep && !empty) {
+      // Highlighted text that is already a web address fills the box.
+      const picked = editor.state.doc.textBetween(from, to, ' ').trim();
+      if (looksLikeUrl(picked)) {
+        const { href } = normaliseLinkInput(picked, { mapsOnly: useMode === 'map' });
+        if (href) keep = href;
+      }
+    }
+    // Place the box just under the cursor, kept inside the writing area.
+    let top = 8;
+    let left = 8;
+    const wrap = wrapRef.current?.getBoundingClientRect();
+    try {
+      const c = editor.view.coordsAtPos(to);
+      if (wrap) {
+        const boxWidth = Math.min(320, wrap.width - 16);
+        top = c.bottom - wrap.top + 6;
+        left = Math.max(8, Math.min(c.left - wrap.left, wrap.width - boxWidth - 8));
+      }
+    } catch { /* keep the default spot */ }
+    setLinkPanel({ mode: useMode, value: keep, error: '', top, left, onLink });
+  };
+  openLinkRef.current = openLinkPanel;
+
+  const closeLinkPanel = (refocus = true) => {
+    setLinkPanel(null);
+    if (refocus) editor?.commands.focus();
   };
 
   const applyLink = () => {
@@ -232,7 +267,15 @@ export default function ThreadEditor({ value, onChange, error }) {
       setLinkPanel((p) => ({ ...p, error: problem }));
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    if (editor.state.selection.empty && !editor.isActive('link')) {
+      const text = linkPanel.mode === 'map' ? 'View on map' : tidyUrl(href) || href;
+      editor.chain().focus()
+        .insertContent({ type: 'text', text, marks: [{ type: 'link', attrs: { href } }] })
+        .unsetMark('link')
+        .run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    }
     setLinkPanel(null);
   };
 
@@ -267,7 +310,7 @@ export default function ThreadEditor({ value, onChange, error }) {
 
   return (
     <div>
-      <div className={`w-full rounded-lg border focus-within:ring-2 ${shell}`}>
+      <div ref={wrapRef} className={`relative w-full rounded-lg border focus-within:ring-2 ${shell}`}>
         {/* Toolbar: compact tap-sized buttons that wrap on narrow screens. */}
         <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 p-1.5">
           <label htmlFor="thread-text-style" className="sr-only">Text style</label>
@@ -307,41 +350,6 @@ export default function ThreadEditor({ value, onChange, error }) {
           />
         </div>
 
-        {/* Link / Map box: shown under the toolbar after pressing Link or Map. */}
-        {linkPanel && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 p-2">
-            <label htmlFor="thread-link-input" className="w-full text-xs font-semibold text-slate-700">
-              {linkPanel.mode === 'map' ? 'Google Maps link for the selected words' : 'Web address for the selected words'}
-            </label>
-            <input
-              id="thread-link-input"
-              autoFocus
-              value={linkPanel.value}
-              onChange={(e) => setLinkPanel((p) => ({ ...p, value: e.target.value, error: '' }))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') { e.preventDefault(); applyLink(); }
-                if (e.key === 'Escape') { e.preventDefault(); setLinkPanel(null); editor?.commands.focus(); }
-              }}
-              placeholder={linkPanel.mode === 'map' ? 'https://maps.app.goo.gl/...' : 'example.com'}
-              className="h-10 min-w-0 flex-1 rounded-md border border-slate-300 px-2 text-base sm:text-sm"
-            />
-            <button type="button" onClick={applyLink} className="h-10 rounded-md bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800">Save</button>
-            {onLink && (
-              <button type="button" onClick={removeLink} className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm">Remove link</button>
-            )}
-            <button type="button" onClick={() => { setLinkPanel(null); editor?.commands.focus(); }} className="h-10 rounded-md px-3 text-sm text-slate-600">Cancel</button>
-            {linkPanel.error ? (
-              <p role="alert" className="w-full text-xs text-red-600">{linkPanel.error}</p>
-            ) : (
-              <p className="w-full text-xs text-slate-500">
-                {linkPanel.mode === 'map'
-                  ? 'Only Google Maps links. The words will show with a map pin.'
-                  : 'We add https:// for you. http:// addresses are not allowed.'}
-              </p>
-            )}
-          </div>
-        )}
-
         {busy && (
           <div role="status" className="border-b border-slate-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-800">
             {busy}
@@ -349,6 +357,57 @@ export default function ThreadEditor({ value, onChange, error }) {
         )}
 
         <EditorContent editor={editor} />
+
+        {/* Link / Map box: a small one-line box at the cursor. Enter or the tick saves; Esc or
+            clicking away closes it. */}
+        {linkPanel && (
+          <div
+            data-testid="link-box"
+            style={{ top: linkPanel.top, left: linkPanel.left }}
+            className="absolute z-20 w-[min(20rem,calc(100%-1rem))] rounded-md border border-slate-200 bg-white px-2 py-1 shadow-md"
+          >
+            <div className="flex items-center gap-1">
+              <input
+                autoFocus
+                aria-label={linkPanel.mode === 'map' ? 'Google Maps link' : 'Link address'}
+                value={linkPanel.value}
+                onChange={(e) => setLinkPanel((p) => ({ ...p, value: e.target.value, error: '' }))}
+                onBlur={() => closeLinkPanel(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); applyLink(); }
+                  if (e.key === 'Escape') { e.preventDefault(); closeLinkPanel(); }
+                }}
+                placeholder={linkPanel.mode === 'map' ? 'Paste a Google Maps link' : 'Paste or type a link'}
+                className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 text-base text-teal-700 placeholder:text-slate-400 focus:outline-none focus:ring-0 sm:text-sm"
+              />
+              {linkPanel.onLink && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={removeLink}
+                  aria-label="Remove link"
+                  title="Remove link"
+                  className="flex h-8 w-8 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+                >
+                  <FaUnlink aria-hidden="true" />
+                </button>
+              )}
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={applyLink}
+                aria-label="Save link"
+                title="Save link"
+                className="flex h-8 w-8 items-center justify-center rounded text-teal-700 hover:bg-teal-50"
+              >
+                <FaCheck aria-hidden="true" />
+              </button>
+            </div>
+            {linkPanel.error && (
+              <p role="alert" className="px-1 pb-1 text-xs text-red-600">{linkPanel.error}</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mt-1 flex items-start justify-between gap-2">
