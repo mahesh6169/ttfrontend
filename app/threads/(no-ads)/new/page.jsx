@@ -8,7 +8,8 @@ import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import { toast } from 'react-toastify';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
-import ThreadEditor from '@/components/threads/ThreadEditor';
+import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
+import useLeaveWarning, { LEAVE_MESSAGE } from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import SuccessView from '@/components/threads/SuccessView';
 import AuthorDetailsSection from '@/components/threads/AuthorDetailsSection';
@@ -61,6 +62,10 @@ const CreateThreadPage = () => {
   const [createdThread, setCreatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Feature 1012: two steps - 1 write (title + post), 2 details. `touched` = the writer changed the
+  // title or post, so leaving the page asks first.
+  const [step, setStep] = useState(1);
+  const [touched, setTouched] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -71,6 +76,7 @@ const CreateThreadPage = () => {
 
   // The rich-text editor emits HTML (or '' when empty). Mirror handleChange's error-clearing.
   const handleQuestionChange = (html) => {
+    setTouched(true);
     setFormData((prev) => ({ ...prev, question: html }));
     if (errors.question) setErrors((prev) => ({ ...prev, question: '' }));
   };
@@ -173,12 +179,37 @@ const CreateThreadPage = () => {
     }
   }, [formData.suburb]);
 
+  const handleTitleChange = (value) => {
+    setTouched(true);
+    setFormData((prev) => ({ ...prev, title: value }));
+    if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+  };
+
+  // Step 1 -> 2: the title and post must be there first.
+  const goToDetails = () => {
+    const writeErrors = {};
+    if (!(formData.title || '').trim()) writeErrors.title = 'Please add a title.';
+    if (!(formData.question || '').trim()) writeErrors.question = 'Please write your post.';
+    if (Object.keys(writeErrors).length) {
+      setErrors((prev) => ({ ...prev, ...writeErrors }));
+      toast.error(writeErrors.title || writeErrors.question);
+      return;
+    }
+    setStep(2);
+    window.scrollTo({ top: 0 });
+  };
+
+  const backToWriting = () => {
+    setStep(1);
+    window.scrollTo({ top: 0 });
+  };
+
+  useLeaveWarning(touched && !showSuccessView);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.question.trim()) newErrors.question = 'Question is required';
     if (!formData.category.trim()) newErrors.category = 'Category is required';
 
     const { name, state, postalCode, location } = formData.suburb;
@@ -243,8 +274,15 @@ const CreateThreadPage = () => {
     }
   };
 
+  const leavePage = () => {
+    if (touched && !window.confirm(LEAVE_MESSAGE)) return;
+    router.back();
+  };
+
   const resetForm = () => {
     setShowSuccessView(false);
+    setStep(1);
+    setTouched(false);
     setCreatedThread(null);
     setFormData({
       title: '',
@@ -282,63 +320,52 @@ const CreateThreadPage = () => {
     <div>
       <RequireVerifiedAccount>
         {showSuccessView && createdThread ? (
-          <SuccessView
+          <div className="mx-auto w-full max-w-3xl"><SuccessView
             thread={createdThread}
             mode="add"
             onAddAnother={resetForm}
-          />
+          /></div>
+        ) : step === 1 ? (
+          <div className="mx-auto w-full max-w-6xl">
+            <ThreadWriteStep
+              heading="New thread"
+              title={formData.title || ''}
+              onTitleChange={handleTitleChange}
+              question={formData.question || ''}
+              onQuestionChange={handleQuestionChange}
+              errors={errors}
+              onNext={goToDetails}
+              onCancel={leavePage}
+            />
+          </div>
         ) : (
-          <div className="w-full">
+          <div className="mx-auto w-full max-w-3xl">
             {/* Top Toolbar — Cancel (left), above the title */}
-            <div className="mb-4 flex items-center">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => router.back()}
+                onClick={leavePage}
                 className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
               >
                 ✕ Cancel
+              </button>
+              <button
+                type="button"
+                onClick={backToWriting}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                ← Back to writing
               </button>
             </div>
 
             {/* Page Title — centered, below the toolbar (forms.md standard) */}
             <div className="text-center mb-6">
-              <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Create New Topic</h1>
-              <p className="mt-1 text-sm text-slate-500">Start a discussion or ask a question</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Step 2 of 2: Details</p>
+              <h1 data-testid="thread-details-title" className="mt-1 text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight break-words">{formData.title}</h1>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
-              {/* Title */}
-              <div>
-                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="What's your topic about?"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className={getInputClasses(errors.title)}
-                  maxLength="200"
-                />
-                {errors.title && (
-                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Question/Description */}
-              <div>
-                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                  Your post <span className="text-red-500">*</span>
-                </label>
-                <ThreadEditor
-                  value={formData.question}
-                  onChange={handleQuestionChange}
-                  error={errors.question}
-                />
-              </div>
-
               {/* Category */}
               <div>
                 <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">

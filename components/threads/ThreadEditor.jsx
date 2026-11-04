@@ -98,7 +98,11 @@ const countPictures = (editor) => {
   return n;
 };
 
-export default function ThreadEditor({ value, onChange, error }) {
+// variant 'page': the full-page writing view (step 1 of creating/editing a thread) - no box around
+// it, the toolbar sticks under the site header while scrolling, and the text sits in a ~720px column
+// (about the width readers see on the thread page).
+export default function ThreadEditor({ value, onChange, error, variant = 'box' }) {
+  const isPage = variant === 'page';
   const fileRef = useRef(null);
   const pendingAddRef = useRef(null); // set when "Add to set" asked for more pictures
   const addToSetRef = useRef(null);
@@ -141,8 +145,9 @@ export default function ThreadEditor({ value, onChange, error }) {
     content: value || '',
     editorProps: {
       attributes: {
-        class:
-          'thread-rich thread-editor-content min-h-[12rem] sm:min-h-[10rem] w-full px-3 py-2 text-base sm:text-sm text-slate-700 focus:outline-none',
+        class: isPage
+          ? 'thread-rich thread-editor-content mx-auto min-h-[55vh] w-full max-w-[720px] px-1 py-5 text-base leading-relaxed text-slate-800 focus:outline-none sm:text-[17px]'
+          : 'thread-rich thread-editor-content min-h-[12rem] sm:min-h-[10rem] w-full px-3 py-2 text-base sm:text-sm text-slate-700 focus:outline-none',
       },
       // Clicking a link while writing opens the small link box to change or remove it.
       handleClick: (_view, _pos, event) => {
@@ -310,9 +315,14 @@ export default function ThreadEditor({ value, onChange, error }) {
 
   return (
     <div>
-      <div ref={wrapRef} className={`relative w-full rounded-lg border focus-within:ring-2 ${shell}`}>
+      <div ref={wrapRef} className={isPage ? 'relative w-full' : `relative w-full rounded-lg border focus-within:ring-2 ${shell}`}>
         {/* Toolbar: compact tap-sized buttons that wrap on narrow screens. */}
-        <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 p-1.5">
+        <div
+          data-testid="editor-toolbar"
+          className={isPage
+            ? 'sticky top-[calc(68px+env(safe-area-inset-top))] z-30 flex flex-wrap items-center justify-center gap-1 border-y border-slate-200 bg-white/95 p-1.5 backdrop-blur'
+            : 'flex flex-wrap items-center gap-1 border-b border-slate-200 p-1.5'}
+        >
           <label htmlFor="thread-text-style" className="sr-only">Text style</label>
           <select
             id="thread-text-style"
@@ -410,7 +420,7 @@ export default function ThreadEditor({ value, onChange, error }) {
         )}
       </div>
 
-      <div className="mt-1 flex items-start justify-between gap-2">
+      <div className={`mt-1 flex items-start justify-between gap-2 ${isPage ? 'mx-auto max-w-[720px] border-t border-slate-100 pt-2' : ''}`}>
         <div className="flex-1">
           {error && <p className="text-red-500 text-xs sm:text-sm">{error}</p>}
           <p className="text-xs text-slate-500">

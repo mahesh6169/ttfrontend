@@ -103,6 +103,7 @@ test('editing a thread reopens the editor with its formatting; adding strikethro
   await page.getByRole('button', { name: 'Save link' }).click();
 
   // Save, then visit the thread page (first visit -> fresh render) and confirm the change.
+  await page.getByRole('button', { name: 'Next: details' }).click();
   await page.getByRole('button', { name: /^Update$/ }).click();
   await page.goto(`/threads/${seed.threadEditId}`);
   await expect(page.locator('.thread-rich s', { hasText: 'struckword' })).toBeVisible({ timeout: 20_000 });
@@ -290,4 +291,29 @@ test('the Picture button adds several pictures as one set where the cursor is, a
   await page.locator('[data-testid="thread-picture-input"]').setInputFiles(many);
   await expect(page.getByText(/up to 10 pictures/)).toBeVisible();
   await expect(page.getByText('Pictures: 1/10')).toBeVisible();
+});
+
+test('creating a thread is two steps: write (title + post) first, then the details; Back keeps the writing', async ({ page }) => {
+  await page.goto('/threads/new');
+  await expect(page.getByTestId('thread-step-write')).toBeVisible({ timeout: 20_000 });
+
+  // Next needs a title and a post.
+  await page.getByRole('button', { name: 'Next: details' }).click();
+  await expect(page.getByText('Please add a title.').first()).toBeVisible();
+  await expect(page.getByLabel('Category')).toHaveCount(0);
+
+  await page.getByLabel('Title').fill('My two step post');
+  await editorBody(page).click();
+  await editorBody(page).pressSequentially('The words come first.');
+  await page.getByRole('button', { name: 'Next: details' }).click();
+
+  // Step 2: the details, under the post's title.
+  await expect(page.getByTestId('thread-details-title')).toHaveText('My two step post');
+  await expect(page.getByText(/Allow group chat on this post/)).toBeVisible();
+  await expect(editorBody(page)).toHaveCount(0);
+
+  // Back to writing keeps everything.
+  await page.getByRole('button', { name: /Back to writing/ }).click();
+  await expect(page.getByLabel('Title')).toHaveValue('My two step post');
+  await expect(editorBody(page)).toContainText('The words come first.');
 });
