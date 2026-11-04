@@ -252,12 +252,12 @@ test('with nothing highlighted, Link and Map add the link at the cursor; a highl
 
   // A highlighted web address fills the box, so Enter is enough.
   await page.keyboard.press('Enter');
-  await editorBody(page).pressSequentially('see example.org');
-  await selectBack(page, 'example.org'.length);
+  await editorBody(page).pressSequentially('see www.example.org');
+  await selectBack(page, 'www.example.org'.length);
   await page.getByRole('button', { name: 'Link' }).click();
-  await expect(page.getByLabel('Link address')).toHaveValue('https://example.org');
+  await expect(page.getByLabel('Link address')).toHaveValue('https://www.example.org');
   await page.keyboard.press('Enter');
-  await expect(editorBody(page).locator('a[href="https://example.org"]')).toHaveCount(1);
+  await expect(editorBody(page).locator('a[href="https://www.example.org"]')).toHaveCount(1);
 
   // Clicking an existing link opens the same box with its address, and it can be removed.
   await editorBody(page).locator('a[href="https://example.com/menu"]').click();
