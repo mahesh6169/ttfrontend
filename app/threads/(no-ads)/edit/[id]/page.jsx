@@ -277,23 +277,8 @@ const EditThreadPage = () => {
 
     formPayload.append('suburb', JSON.stringify(suburb));
 
-    if (authorSectionRef.current?.isOptedIn()) {
-      if (formData.author && (formData.author.name || formData.author.website ||
-          formData.author.contact || formData.author.email ||
-          formData.author.aboutMyself ||
-          (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
-        formPayload.append('author', JSON.stringify(formData.author));
-      }
-    } else {
-      formPayload.append('author', JSON.stringify({
-        name: '',
-        website: '',
-        contact: '',
-        email: '',
-        aboutMyself: '',
-        socialMedia: []
-      }));
-    }
+    // Feature 1012: the author (at least the name) is always sent.
+    formPayload.append('author', JSON.stringify(formData.author));
 
     // Feature 1012: pictures live inside the post; the server reads them from the text and
     // deletes any picture taken out of it.
@@ -478,7 +463,7 @@ const EditThreadPage = () => {
                   formData={formData}
                   onChange={setFormData}
                   errors={errors}
-                  userName={currentUser?.name || ''}
+                  userName={currentUser?.isCurator ? 'Desify Team' : (currentUser?.name || '')}
                 />
               </div>
 

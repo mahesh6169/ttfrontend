@@ -409,23 +409,21 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
     }    
     
 
-  // Name shown on the post (feature 1012): the author name the writer filled in; otherwise
-  // "Desify Team" for curated accounts; otherwise the account name.
+  // Name shown on the post (feature 1012), in the About card (there is no "Posted By" line): the
+  // author name the writer filled in; otherwise "Desify Team" for curated accounts; otherwise the
+  // account name.
   const postedByName =
     thread.author?.name?.trim() || (thread.isCuratedThread ? 'Desify Team' : thread.owner?.name) || '';
   // Group chat switch (feature 1012). Older threads have no field: chat is on.
   const chatOn = thread.allowChat !== false;
 
   // Author "About" block — rendered inline on mobile, and as a sidebar card on desktop (under Share).
-  const hasAuthorDetails =
-    thread.author && (thread.author.name || thread.author.website || thread.author.contact ||
-      thread.author.email || thread.author.aboutMyself ||
-      (thread.author.socialMedia && thread.author.socialMedia.length > 0));
+  const hasAuthorDetails = !!postedByName;
 
   const authorHeading = (
     <h3 className="text-sm sm:text-base font-semibold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-200 mb-3">
       <FaUser className="text-slate-600" />
-      <span>About {thread.author?.name || 'Author'}</span>
+      <span>About <span data-testid="thread-author-name">{postedByName}</span></span>
     </h3>
   );
 
@@ -547,12 +545,6 @@ const ThreadDetailContent = ({ threadId, initialThread = null }) => {
               <div className="text-sm sm:text-base">
                 <span className="font-semibold text-slate-700">Category:</span>{' '}
                 <span className="text-slate-600">{thread.category}</span>
-              </div>
-            )}
-            {postedByName && (
-              <div className="text-sm sm:text-base">
-                <span className="font-semibold text-slate-700">Posted By:</span>{' '}
-                <span className="text-slate-600" data-testid="thread-posted-by">{postedByName}</span>
               </div>
             )}
             {thread.createdAt && (

@@ -653,6 +653,7 @@ const userSlice = createSlice({
           freeHost: payload.user.freeHost || false,
           paidHost: payload.user.paidHost || false,
           promoHost: payload.user.promoHost || false,
+          isCurator: payload.user.isCurator || false,
         };
         state.mutedThreads = payload.user.mutedThreads || [];
       })

@@ -31,8 +31,10 @@ test('a blog-style post shows headings, links, a picture and a picture set in th
   await expect(map).toHaveAttribute('target', '_blank');
   await expect(post(page).locator('a', { hasText: 'our menu' })).not.toHaveClass(/map-link/);
 
-  // The author name replaces the account name; the old top photo gallery is gone.
-  await expect(page.getByTestId('thread-posted-by')).toHaveText('Ravi Kumar');
+  // The author name (not the account name) is shown in the About card; there is no "Posted By"
+  // line, and the old top photo gallery is gone.
+  await expect(page.getByTestId('thread-author-name').first()).toHaveText('Ravi Kumar');
+  await expect(page.getByText('Posted By:')).toHaveCount(0);
   await expect(page.getByText('Click for full view')).toHaveCount(0);
 });
 
