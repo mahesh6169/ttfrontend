@@ -64,7 +64,8 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
       </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
         {pictures.map((p, i) => (
-          <div key={`${p.src}-${i}`} className="relative">
+          <div key={`${p.src}-${i}`} className="min-w-0">
+          <div className="relative">
             <img
               src={sizedPictureUrl(p.src, 300)}
               alt={p.alt || `Picture ${i + 1}`}
@@ -101,6 +102,12 @@ function PictureSetView({ node, editor, getPos, updateAttributes, deleteNode, ex
                 </button>
               </div>
             )}
+          </div>
+          {p.alt && (
+            <p className="mt-0.5 truncate text-[11px] text-slate-500" title={p.alt} data-testid="picture-name">
+              {p.alt}
+            </p>
+          )}
           </div>
         ))}
         <button

@@ -56,7 +56,8 @@ export const shrinkPicture = async (file) => {
 };
 
 /**
- * Shrink and upload one picture. Resolves to { src, width, height, alt: '' } for the editor.
+ * Shrink and upload one picture. Resolves to { src, width, height, alt } for the editor; alt is the
+ * original file name without its extension (shown under the thumbnail, and read out by screen readers).
  * @param {File} original
  */
 export const uploadThreadPicture = async (original) => {
@@ -71,6 +72,6 @@ export const uploadThreadPicture = async (original) => {
     src: res.data.url,
     width: res.data.width || width,
     height: res.data.height || height,
-    alt: '',
+    alt: String(original?.name || '').replace(/\.[a-z0-9]+$/i, '').slice(0, 200),
   };
 };
