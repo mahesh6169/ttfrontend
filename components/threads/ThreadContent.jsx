@@ -15,7 +15,6 @@ const PictureViewer = dynamic(() => import('@/components/threads/PictureViewer')
 const SIZES = '(max-width: 768px) 100vw, 760px';
 
 function Picture({ pic, label, onOpen, eager, fill }) {
-  const ratio = pic.width && pic.height ? `${pic.width} / ${pic.height}` : undefined;
   return (
     <button
       type="button"
@@ -32,8 +31,7 @@ function Picture({ pic, label, onOpen, eager, fill }) {
         height={pic.height || undefined}
         loading={eager ? 'eager' : 'lazy'}
         decoding="async"
-        className={fill ? 'h-full w-full object-contain' : 'mx-auto h-auto max-h-[80vh] w-full object-contain'}
-        style={!fill && ratio ? { aspectRatio: ratio } : undefined}
+        className={fill ? 'h-full w-full object-contain' : 'mx-auto block h-auto max-h-[min(60vh,600px)] w-auto max-w-full'}
       />
     </button>
   );
