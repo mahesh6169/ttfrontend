@@ -200,13 +200,13 @@ const FORUM_TILES = [
     requiresAuth: true,
   },
   {
-    posterLabel: 'Health & Medical',
-    seekerLabel: 'Health & Medical',
+    posterLabel: 'Health & Wellbeing',
+    seekerLabel: 'Health & Wellbeing',
     icon: HiHeart,
     posterTarget: '/threads/new',
-    posterParams: { cat: 'Health & Medical' },
+    posterParams: { cat: 'Health & Wellbeing' },
     seekerTarget: '/threads',
-    seekerParams: { cat: 'Health & Medical' },
+    seekerParams: { cat: 'Health & Wellbeing' },
     requiresAuth: true,
   },
   {

@@ -1,6 +1,6 @@
 // Pure-function checks for small shared utilities (no page, no browser, no server).
 import { test, expect } from '@playwright/test';
-import { tidyUrl } from '../../utils/helpers/threads/richText.js';
+import { tidyUrl, tidyLinksInHtml, normaliseLinkInput, isGoogleMapsUrl, splitThreadContent, sizedPictureUrl } from '../../utils/helpers/threads/richText.js';
 import { isTravelRequest, isIndiaToIndia, getTravelCardLabel, getTravelFieldLabel, formatTravelDate, getTravelPlaceText } from '../../components/adverts/travelRequests.js';
 
 // Tidied URL display for thread links - featureplans/threads-url-display.md.
@@ -28,6 +28,47 @@ test('tidyUrl strips scheme and www, never cuts the domain, and caps at the 60-c
 });
 
 // Travel Requests cards show the budget kept in fields, e.g. "Wanted - $50".
+// Feature 1012 - blog-style thread posts.
+test('links: https is added for you, http and other schemes are refused, the Map box takes only Google Maps', () => {
+  expect(normaliseLinkInput('google.com')).toEqual({ href: 'https://google.com' });
+  expect(normaliseLinkInput('https://example.com/a')).toEqual({ href: 'https://example.com/a' });
+  expect(normaliseLinkInput('http://example.com').error).toMatch(/https/);
+  expect(normaliseLinkInput('javascript:alert(1)').error).toBeTruthy();
+  expect(normaliseLinkInput('').error).toBeTruthy();
+  expect(normaliseLinkInput('example.com', { mapsOnly: true }).error).toMatch(/Google Maps/);
+  for (const u of ['https://maps.app.goo.gl/abc', 'https://www.google.com/maps/place/x', 'https://www.google.com.au/maps?q=a', 'https://maps.google.com/?q=a', 'https://goo.gl/maps/x']) {
+    expect(isGoogleMapsUrl(u)).toBe(true);
+  }
+  for (const u of ['https://example.com/maps', 'http://maps.google.com/?q=a', 'https://google.com/search?q=maps']) {
+    expect(isGoogleMapsUrl(u)).toBe(false);
+  }
+});
+
+test('thread links: web-address text is tidied, chosen words are kept, Google Maps links get the pin class', () => {
+  const html =
+    '<p><a href="https://maps.app.goo.gl/x">the place</a> ' +
+    '<a href="https://example.com/a/b">https://example.com/a/b</a> ' +
+    '<a href="https://example.com/c">click here</a></p>';
+  const out = tidyLinksInHtml(html);
+  expect(out).toContain('<a class="map-link" href="https://maps.app.goo.gl/x">the place</a>');
+  expect(out).toContain('>example.com/a/b</a>');
+  expect(out).toContain('>click here</a>');
+  expect(out.match(/map-link/g)).toHaveLength(1);
+});
+
+test('a post splits into text and picture blocks in the written order; pictures get screen-sized versions', () => {
+  const pic = 'https://res.cloudinary.com/demo/image/upload/v1/tagtelugu/threads/a.jpg';
+  const parts = splitThreadContent(
+    `<h2>Top</h2><div data-pictures><img src="${pic}" alt="one" width="1600" height="1200" /></div>` +
+    `<p>Middle</p><div data-pictures=""><img src="${pic}"><img src="${pic}"></div><p>End</p>`
+  );
+  expect(parts.map((p) => p.type)).toEqual(['html', 'pictures', 'html', 'pictures', 'html']);
+  expect(parts[1].pictures).toEqual([{ src: pic, alt: 'one', width: 1600, height: 1200 }]);
+  expect(parts[3].pictures).toHaveLength(2);
+  expect(sizedPictureUrl(pic, 800)).toBe('https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,c_limit,w_800/v1/tagtelugu/threads/a.jpg');
+  expect(sizedPictureUrl('https://example.com/a.jpg', 800)).toBe('https://example.com/a.jpg');
+});
+
 test('travel request cards read "Wanted/Offered - budget" from the ad fields', () => {
   const ad = (adType, fields) => ({ subcategory: 'Parcel', adType, fields });
   expect(getTravelCardLabel(ad('wanted', { budgetType: 'Fixed amount', budgetAmount: 50 }))).toBe('Wanted - $50');

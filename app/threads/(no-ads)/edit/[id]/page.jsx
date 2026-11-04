@@ -11,7 +11,9 @@ import { toast } from 'react-toastify';
 import { Autocomplete, LoadScriptNext } from '@react-google-maps/api';
 import RequireVerifiedAccount from '@/components/Auth/RequireVerifiedAccount';
 import CategorySelector from '@/components/threads/CategorySelector';
-import ThreadEditor from '@/components/threads/ThreadEditor';
+import ThreadWriteStep from '@/components/threads/ThreadWriteStep';
+import { discardPostPictures } from '@/utils/helpers/threads/threadPictures';
+import useLeaveWarning from '@/hooks/threads/useLeaveWarning';
 import CommunitySelector from '@/components/shared/CommunitySelector';
 import { needsCommunityField } from '@/components/threads/categories';
 import SuccessView from '@/components/threads/SuccessView';
@@ -33,7 +35,7 @@ const EditThreadPage = () => {
     question: '',
     category: '',
     communities: [],
-    images: [],
+    allowChat: true,
     suburb: {
       name: '',
       state: '',
@@ -53,17 +55,21 @@ const EditThreadPage = () => {
     },
   });
 
-  const [existingImages, setExistingImages] = useState([]);
-  const [preview, setPreview] = useState([]);
   const [autocomplete, setAutocomplete] = useState(null);
   const [errors, setErrors] = useState({});
   const [locationInput, setLocationInput] = useState('');
-  const fileInputRef = useRef(null);
   const authorSectionRef = useRef(null);
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [updatedThread, setUpdatedThread] = useState(null);
   const [locationValidationError, setLocationValidationError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Feature 1012: two steps - 1 write (title + post), 2 details. `touched` = the writer changed the
+  // title or post, so leaving the page asks first.
+  const [step, setStep] = useState(1);
+  const [touched, setTouched] = useState(false);
+  // Pictures uploaded in this session - sent on save / cancel so removed ones are deleted.
+  const sessionPicsRef = useRef([]);
+  const notePicture = (src) => { sessionPicsRef.current.push(src); setTouched(true); };
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -79,7 +85,7 @@ const EditThreadPage = () => {
         question: thread.question || '',
         category: thread.category || '',
         communities: thread.communities || [],
-        images: [],
+        allowChat: thread.allowChat !== false,
         suburb: thread.suburb || {
           name: '',
           state: '',
@@ -100,8 +106,6 @@ const EditThreadPage = () => {
       };
 
       setFormData(updatedFormData);
-      setExistingImages(thread.images || []);
-      setPreview((thread.images || []).map((img) => img.url));
 
       if (thread.suburb && thread.suburb.name) {
         setLocationInput(`${thread.suburb.name}, ${thread.suburb.state} ${thread.suburb.postalCode}`);
@@ -124,56 +128,9 @@ const EditThreadPage = () => {
 
   // The rich-text editor emits HTML (or '' when empty). Mirror handleChange's error-clearing.
   const handleQuestionChange = (html) => {
+    setTouched(true);
     setFormData((prev) => ({ ...prev, question: html }));
     if (errors.question) setErrors((prev) => ({ ...prev, question: '' }));
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const totalImages = existingImages.length + preview.length - existingImages.length + files.length;
-
-    if (totalImages > 10) {
-      toast.error('You can upload up to 10 images only.');
-      return;
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    const validFiles = files.filter((file) => {
-      if (!allowedTypes.includes(file.type)) {
-        toast.error(`Unsupported file type: ${file.name}. Only JPEG, PNG, and WebP formats are allowed.`);
-        return false;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} is too large. Each image must be under 10MB.`);
-        return false;
-      }
-      return true;
-    });
-
-    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-    setPreview((prev) => [...prev, ...newPreviews]);
-
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...validFiles],
-    }));
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const handleRemoveImage = (index) => {
-    if (index < existingImages.length) {
-      const updated = [...existingImages];
-      updated.splice(index, 1);
-      setExistingImages(updated);
-    } else {
-      const adjustedIndex = index - existingImages.length;
-      setFormData((prev) => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== adjustedIndex),
-      }));
-    }
-    setPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLocationInputChange = (e) => {
@@ -262,13 +219,38 @@ const EditThreadPage = () => {
     }
   };
 
+  const handleTitleChange = (value) => {
+    setTouched(true);
+    setFormData((prev) => ({ ...prev, title: value }));
+    if (errors.title) setErrors((prev) => ({ ...prev, title: '' }));
+  };
+
+  // Step 1 -> 2: the title and post must be there first.
+  const goToDetails = () => {
+    const writeErrors = {};
+    if (!(formData.title || '').trim()) writeErrors.title = 'Please add a title.';
+    if (!(formData.question || '').trim()) writeErrors.question = 'Please write your post.';
+    if (Object.keys(writeErrors).length) {
+      setErrors((prev) => ({ ...prev, ...writeErrors }));
+      toast.error(writeErrors.title || writeErrors.question);
+      return;
+    }
+    setStep(2);
+    window.scrollTo({ top: 0 });
+  };
+
+  const backToWriting = () => {
+    setStep(1);
+    window.scrollTo({ top: 0 });
+  };
+
+  const { confirmLeave, leaveModal } = useLeaveWarning(touched && !showSuccessView, () => discardPostPictures(sessionPicsRef.current, formData.question));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { title, question, category, images, suburb } = formData;
+    const { title, question, category, suburb } = formData;
     const newErrors = {};
 
-    if (!title.trim()) newErrors.title = 'Title is required';
-    if (!question.trim()) newErrors.question = 'Question is required';
     if (!category.trim()) newErrors.category = 'Category is required';
 
     const { name, state, postalCode, location } = suburb;
@@ -299,28 +281,14 @@ const EditThreadPage = () => {
 
     formPayload.append('suburb', JSON.stringify(suburb));
 
-    if (authorSectionRef.current?.isOptedIn()) {
-      if (formData.author && (formData.author.name || formData.author.website ||
-          formData.author.contact || formData.author.email ||
-          formData.author.aboutMyself ||
-          (formData.author.socialMedia && formData.author.socialMedia.length > 0))) {
-        formPayload.append('author', JSON.stringify(formData.author));
-      }
-    } else {
-      formPayload.append('author', JSON.stringify({
-        name: '',
-        website: '',
-        contact: '',
-        email: '',
-        aboutMyself: '',
-        socialMedia: []
-      }));
-    }
+    // Feature 1012: the author (at least the name) is always sent.
+    formPayload.append('author', JSON.stringify(formData.author));
 
-    existingImages.forEach((img) =>
-      formPayload.append('existingImages', JSON.stringify(img))
-    );
-    images.forEach((file) => formPayload.append('images', file));
+    // Feature 1012: pictures live inside the post; the server reads them from the text and
+    // deletes any picture taken out of it.
+    formPayload.append('picturesInText', 'true');
+    formPayload.append('sessionPictures', JSON.stringify(sessionPicsRef.current));
+    formPayload.append('allowChat', formData.allowChat ? 'true' : 'false');
 
     const result = await dispatch(
       updateThread({ threadId, formData: formPayload })
@@ -344,17 +312,17 @@ const EditThreadPage = () => {
   };
 
   const handleCancel = () => {
-    const backTo = localStorage.getItem('cancelRedirectUrl');
-    localStorage.removeItem('cancelRedirectUrl');
-    router.push(backTo || '/users/profile/managethreads');
+    confirmLeave(() => {
+      setTouched(false);
+      const backTo = localStorage.getItem('cancelRedirectUrl');
+      localStorage.removeItem('cancelRedirectUrl');
+      router.push(backTo || '/users/profile/managethreads');
+    });
   };
 
   const getInputClasses = (hasError) => `w-full p-3 sm:p-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 ${
     hasError ? 'border-red-500 focus:ring-red-300' : 'border-slate-300 focus:ring-teal-300'
   }`;
-
-  const totalImages = existingImages.length + (preview.length - existingImages.length);
-  const isMaxImagesReached = totalImages >= 10;
 
   if (isLoading) {
     return (
@@ -369,64 +337,55 @@ const EditThreadPage = () => {
 
   return (
     <div>
+      {leaveModal}
       <RequireVerifiedAccount>
         {showSuccessView && updatedThread ? (
-          <SuccessView
+          <div className="mx-auto w-full max-w-3xl"><SuccessView
             thread={updatedThread}
             mode="edit"
-          />
+          /></div>
+        ) : step === 1 ? (
+          <div className="mx-auto w-full max-w-6xl">
+            <ThreadWriteStep
+              heading="Edit thread"
+              title={formData.title || ''}
+              onTitleChange={handleTitleChange}
+              question={formData.question || ''}
+              onQuestionChange={handleQuestionChange}
+              onPictureUploaded={notePicture}
+              errors={errors}
+              onNext={goToDetails}
+              onCancel={handleCancel}
+            />
+          </div>
         ) : (
-          <div className="w-full">
+          <div className="mx-auto w-full max-w-3xl">
             {/* Top Toolbar — Cancel (left), above the title */}
-            <div className="mb-4 flex items-center">
+            <div className="mb-4 flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="inline-flex items-center gap-1 bg-teal-700 text-white hover:bg-teal-800 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
               >
                 ✕ Cancel
+              </button>
+              <button
+                type="button"
+                onClick={backToWriting}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                ← Back
               </button>
             </div>
 
             {/* Page Title — centered, below the toolbar (forms.md standard) */}
             <div className="text-center mb-6">
-              <h1 className="text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight">Edit Topic</h1>
-              <p className="mt-1 text-sm text-slate-500">Update your discussion or question</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Step 2 of 2: Details</p>
+              <h1 data-testid="thread-details-title" className="mt-1 text-base sm:text-lg md:text-xl font-bold text-teal-900 leading-tight break-words">{formData.title}</h1>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="bg-white p-3 sm:p-6 rounded-lg shadow-md border border-slate-200 space-y-4 sm:space-y-6">
-              {/* Title */}
-              <div>
-                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="What's your topic about?"
-                  value={formData.title || ''}
-                  onChange={handleChange}
-                  className={getInputClasses(errors.title)}
-                  maxLength="200"
-                />
-                {errors.title && (
-                  <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Question/Description */}
-              <div>
-                <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <ThreadEditor
-                  value={formData.question || ''}
-                  onChange={handleQuestionChange}
-                  error={errors.question}
-                />
-              </div>
-
               {/* Category */}
               <div>
                 <label className="block font-medium mb-2 text-slate-600 text-sm sm:text-base">
@@ -512,88 +471,25 @@ const EditThreadPage = () => {
                   formData={formData}
                   onChange={setFormData}
                   errors={errors}
-                  userName={currentUser?.name || ''}
+                  userName={currentUser?.isCurator ? 'Desify Team' : (currentUser?.name || '')}
                 />
               </div>
 
-              {/* Images */}
+              {/* Group chat switch (feature 1012) */}
               <div className="border-t border-slate-200 pt-4 sm:pt-6">
-                <span className="block font-medium text-slate-600 text-sm sm:text-base">
-                  Upload Images
-                </span>
-                <p className="text-xs text-slate-500 mt-1 mb-3">
-                  JPEG, PNG & WebP · Max 10 · Up to 10MB each · {preview.length}/10 uploaded
-                </p>
-
-                <div>
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    disabled={isMaxImagesReached}
-                    className="hidden"
-                    id="thread-edit-image-upload"
+                    type="checkbox"
+                    name="allowChat"
+                    checked={formData.allowChat}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, allowChat: e.target.checked }))}
+                    className="mt-1 h-5 w-5 accent-teal-700"
                   />
-                  <label
-                    htmlFor="thread-edit-image-upload"
-                    className={`inline-block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      isMaxImagesReached
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer'
-                    }`}
-                  >
-                    Choose Files
-                  </label>
-                  {isMaxImagesReached && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Maximum reached. Remove images to add new ones.
-                    </p>
-                  )}
-                </div>
-
-                {preview.length > 0 && (
-                  <div className="mt-3 flex gap-3 flex-wrap">
-                    {preview.map((src, idx) => {
-                      const isSaved = idx < existingImages.length;
-                      const fileName = isSaved
-                        ? existingImages[idx]?.originalFilename
-                        : formData.images[idx - existingImages.length]?.name;
-                      return (
-                        <div key={idx} className="relative">
-                          <img
-                            src={src}
-                            alt={fileName || `Image ${idx + 1}`}
-                            className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg"
-                          />
-                          {isSaved ? (
-                            <span className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              Saved
-                            </span>
-                          ) : (
-                            <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
-                              New
-                            </span>
-                          )}
-                          {fileName && (
-                            <p className="text-[10px] text-slate-500 mt-1 truncate w-20 sm:w-24" title={fileName}>
-                              {fileName}
-                            </p>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(idx)}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full hover:bg-red-600 flex items-center justify-center"
-                            title="Remove"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                  <span>
+                    <span className="block font-medium text-slate-700 text-sm sm:text-base">Allow group chat on this post</span>
+                    <span className="block text-xs text-slate-500">Off: readers see no chat box and nobody can send messages. Earlier messages are kept and come back when you turn it on.</span>
+                  </span>
+                </label>
               </div>
 
               {/* Submit */}

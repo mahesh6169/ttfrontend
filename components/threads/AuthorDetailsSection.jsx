@@ -13,7 +13,10 @@ const SOCIAL_MEDIA_PLATFORMS = [
 ];
 
 const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {}, userName = '' }, ref) => {
-  const [showAuthorDetails, setShowAuthorDetails] = useState(false);
+  // Feature 1012: the author is always shown (no opt-in) and the name is a must. It starts as the
+  // account name ("Desify Team" for curator accounts) and can be changed.
+  const showAuthorDetails = true;
+  const prefilledRef = useRef(false);
   const [activeFields, setActiveFields] = useState({
     contact: false,
     email: false,
@@ -36,15 +39,13 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
     socialMedia: []
   };
 
-  // Initialize states based on existing author data (for edit mode)
+  // Start the author name as the account name, once (clearing it later stays cleared).
   useEffect(() => {
-    const hasAnyAuthorData = author.name || author.website || author.contact ||
-                             author.email || author.aboutMyself ||
-                             (author.socialMedia && author.socialMedia.length > 0);
-    if (hasAnyAuthorData && !showAuthorDetails) {
-      setShowAuthorDetails(true);
-    }
-  }, []);
+    if (prefilledRef.current || !userName) return;
+    prefilledRef.current = true;
+    if (!author.name) onChange({ ...formData, author: { ...author, name: userName } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userName]);
 
   // Initialize activeFields based on existing author data (for edit mode)
   useEffect(() => {
@@ -194,55 +195,13 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [platformDropdownOpen]);
 
-  // Handle checkbox toggle
-  const handleCheckboxToggle = (checked) => {
-    setShowAuthorDetails(checked);
-
-    if (checked) {
-      // Prefill author name with username
-      if (userName) {
-        onChange({
-          ...formData,
-          author: {
-            name: userName,
-            website: '',
-            contact: '',
-            email: '',
-            aboutMyself: '',
-            socialMedia: []
-          }
-        });
-      }
-    } else {
-      // Clear all author data
-      onChange({
-        ...formData,
-        author: {
-          name: '',
-          website: '',
-          contact: '',
-          email: '',
-          aboutMyself: '',
-          socialMedia: []
-        }
-      });
-      setActiveFields({
-        contact: false,
-        email: false,
-        website: false,
-        aboutMyself: false,
-        socialMedia: false,
-      });
-      setFieldErrors({});
-    }
-  };
 
   // Validate all fields before form submission
   // When a field is toggled ON, it becomes mandatory
   const validateFields = () => {
-    if (!showAuthorDetails) return true;
-
     const newErrors = {};
+
+    if (!author.name?.trim()) newErrors.name = 'Please add the author name.';
 
     // About Myself - mandatory if toggled on
     if (activeFields.aboutMyself && !author.aboutMyself?.trim()) {
@@ -289,16 +248,6 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
       });
     }
 
-    // At least one contact detail is required when Author Details is opted in
-    const hasAtLeastOneDetail =
-      !!author.aboutMyself?.trim() ||
-      !!author.contact?.trim() ||
-      !!author.email?.trim() ||
-      !!author.website?.trim();
-    if (!hasAtLeastOneDetail) {
-      newErrors.atLeastOne = 'Add at least one detail — About, Mobile, Email, or Website.';
-    }
-
     setFieldErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -321,42 +270,28 @@ const AuthorDetailsSection = forwardRef(({ formData = {}, onChange, errors = {},
 
   return (
     <div className="mb-4">
-      {/* Opt-in Checkbox */}
-      <div className="flex items-start gap-3 mb-3">
-        <input
-          type="checkbox"
-          id="showAuthorDetails"
-          checked={showAuthorDetails}
-          onChange={(e) => handleCheckboxToggle(e.target.checked)}
-          className="mt-0.5 h-4 w-4 text-teal-600 focus:ring-teal-300 border-slate-300 rounded"
-        />
-        <div className="flex-1">
-          <label htmlFor="showAuthorDetails" className="cursor-pointer">
-            <span className="block font-medium text-slate-600 text-sm sm:text-base">
-              Author Details <span className="text-slate-400 font-normal text-xs">(Optional)</span>
-            </span>
-            <p className="text-xs text-slate-500 mt-1">
-              I am a blogger or content creator - let people know more about me
-            </p>
-          </label>
-        </div>
+      <div className="mb-3">
+        <span className="block font-medium text-slate-600 text-sm sm:text-base">Author</span>
+        <p className="text-xs text-slate-500 mt-1">Shown on your post in the About card. Only the name is needed.</p>
       </div>
 
       {showAuthorDetails && (
         <div className="space-y-4 p-4 rounded-lg border border-slate-200">
           {/* Author Name - Always visible */}
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">
-              Author Name <span className="text-xs text-slate-500">(defaults to username)</span>
+            <label htmlFor="author-name" className="block text-sm font-medium text-slate-600 mb-1">
+              Author name <span className="text-red-500">*</span>
             </label>
             <input
+              id="author-name"
               type="text"
               value={author.name || ''}
               onChange={(e) => handleAuthorChange('name', e.target.value)}
-              className={getInputClasses(false)}
+              className={getInputClasses(!!fieldErrors.name)}
               placeholder="Your name or pen name"
               maxLength={100}
             />
+            {fieldErrors.name && <p className="text-red-500 text-xs sm:text-sm mt-1">{fieldErrors.name}</p>}
           </div>
 
           {/* Toggle Buttons */}

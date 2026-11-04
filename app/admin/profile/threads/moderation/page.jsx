@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import axios from '@/utils/axiosConfig';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Pagination from '@/components/Pagination';
+import Link from 'next/link';
 
 const ThreadModerationPage = () => {
   // State management - non-Redux implementation
@@ -121,13 +122,15 @@ const ThreadModerationPage = () => {
                   <th className="border p-2 text-left">Thread Title</th>
                   <th className="border p-2 text-left">Posted By</th>
                   <th className="border p-2 text-left">Email</th>
+                  <th className="border p-2 text-left">Category</th>
+                  <th className="border p-2">Chat</th>
                   <th className="border p-2">Created Date</th>
                   <th className="border p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {threads.map((thread) => {
-                  const { _id, title, authorName, authorEmail, createdAt } = thread;
+                  const { _id, title, authorName, authorEmail, createdAt, category, allowChat } = thread;
 
                   return (
                     <tr key={_id} className="hover:bg-slate-50">
@@ -145,10 +148,18 @@ const ThreadModerationPage = () => {
                           {authorEmail}
                         </a>
                       </td>
+                      <td className="border p-2">{category}</td>
+                      <td className="border p-2 text-center">{allowChat === false ? 'Off' : 'On'}</td>
                       <td className="border p-2 text-center">
                         {new Date(createdAt).toLocaleDateString('en-AU')}
                       </td>
-                      <td className="border p-2 text-center">
+                      <td className="border p-2 text-center whitespace-nowrap">
+                        <Link
+                          href={`/admin/profile/threads/edit/${_id}`}
+                          className="mr-2 inline-block px-3 py-1 text-xs rounded bg-teal-700 text-white hover:bg-teal-800"
+                        >
+                          Moderate
+                        </Link>
                         <button
                           onClick={() => handleDelete(_id)}
                           disabled={deletingThreads[_id]}

@@ -81,7 +81,8 @@ async function fetchDefaultThreadsPage() {
   try {
     const res = await fetch(`${API_BASE_URL}/threads/search?${query.toString()}`, {
       headers: { 'x-api-key': API_KEY },
-      next: { revalidate: 300 },
+      // threads-list: dropped by the backend whenever a thread is created, edited or deleted.
+      next: { revalidate: 300, tags: ['threads-list'] },
     });
     if (!res.ok) return null;
     const body = await res.json();

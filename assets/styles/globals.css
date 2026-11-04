@@ -198,3 +198,23 @@ input[type="number"] {
 .thread-rich strong { font-weight: 600; }
 .thread-rich a { color: #0f766e; text-decoration: underline; word-break: break-word; } /* teal-700 */
 .thread-rich a:hover { color: #115e59; } /* teal-800 */
+/* Feature 1012: blog-style posts - Heading (h2) and Subheading (h3), Google Maps links with a pin. */
+.thread-rich h2 { font-size: 1.375rem; line-height: 1.3; font-weight: 700; color: #0f172a; margin: 1.25rem 0 0.5rem; }
+.thread-rich h3 { font-size: 1.125rem; line-height: 1.35; font-weight: 700; color: #1e293b; margin: 1rem 0 0.375rem; }
+.thread-rich h2:first-child, .thread-rich h3:first-child { margin-top: 0; }
+@media (min-width: 640px) {
+  .thread-rich h2 { font-size: 1.5rem; }
+  .thread-rich h3 { font-size: 1.25rem; }
+}
+.thread-rich a.map-link { white-space: nowrap; }
+.thread-rich a.map-link::before {
+  content: "";
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.2em;
+  vertical-align: -0.12em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a7 7 0 0 0-7 7c0 5.3 7 13 7 13s7-7.7 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E") center / contain no-repeat;
+}

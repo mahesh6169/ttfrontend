@@ -15,6 +15,8 @@ import { toast } from 'react-toastify';
 import Link from 'next/link';
 import ConfirmModal from '@/components/ConfirmModal';
 import { MdNotifications, MdNotificationsOff } from 'react-icons/md';
+import { FaPen, FaTrash, FaRegImage } from 'react-icons/fa';
+import { stripHtmlToText, parsePictures, sizedPictureUrl } from '@/utils/helpers/threads/richText';
 import PageSkeleton from '@/components/skeleton/PageSkeleton';
 import useDelayedLoading from '@/hooks/useDelayedLoading';
 import ProfilePageHeading from '@/components/layout/ProfilePageHeading';
@@ -131,70 +133,82 @@ const ManageThreads = () => {
           description="You haven't posted any topics yet."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {threads.map((thread) => {
+        // Feature 1012: cards show the first picture of the post, the category, a plain-text preview
+        // (no HTML), the chat switch, and icon actions. Newest first.
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...threads]
+            .sort((x, y) => new Date(y.createdAt) - new Date(x.createdAt))
+            .map((thread) => {
             const isMuted = mutedThreads.includes(thread._id);
+            const firstPicture = parsePictures(thread.question)[0]?.src;
+            const preview = stripHtmlToText(thread.question);
+            const viewUrl = buildSlugUrl('thread', thread.title, thread._id);
 
             return (
               <div
                 key={thread._id}
-                className="bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200 p-3"
+                data-testid="manage-thread-card"
+                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                {/* Title */}
-                <h3
-                  className="text-sm font-semibold text-slate-900 line-clamp-2 min-h-[2.5rem] cursor-pointer hover:text-teal-700"
-                  onClick={() => router.push(buildSlugUrl('thread', thread.title, thread._id))}
-                >
-                  {thread.title}
-                </h3>
-
-                {/* Mute notifications toggle */}
-                <button
-                  type="button"
-                  onClick={() => toggleMute(thread._id, isMuted)}
-                  className={`flex items-center gap-1 text-xs mt-1 ${
-                    isMuted
-                      ? 'text-red-500 hover:text-red-600'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  {isMuted ? (
-                    <MdNotificationsOff className="text-sm" />
+                {/* First picture of the post */}
+                <Link href={viewUrl} className="block h-32 bg-slate-100 sm:h-36">
+                  {firstPicture ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={sizedPictureUrl(firstPicture, 600)} alt="" loading="lazy" className="h-full w-full object-cover" />
                   ) : (
-                    <MdNotifications className="text-sm" />
+                    <span className="flex h-full w-full items-center justify-center text-slate-300">
+                      <FaRegImage size={28} aria-hidden="true" />
+                    </span>
                   )}
-                  <span>{isMuted ? 'Notifications muted' : 'Mute notifications'}</span>
-                </button>
+                </Link>
 
-                {/* Question preview */}
-                <p className="text-xs text-slate-600 line-clamp-2 mt-1.5">
-                  {thread.question}
-                </p>
+                <div className="flex flex-1 flex-col p-3">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    {thread.category && (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{thread.category}</span>
+                    )}
+                    {thread.allowChat === false && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">Chat off</span>
+                    )}
+                  </div>
 
-                {/* Date */}
-                <p className="text-[11px] text-slate-500 mt-1.5">
-                  {new Date(thread.createdAt).toLocaleDateString('en-AU', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </p>
+                  <Link href={viewUrl} className="line-clamp-2 text-sm font-semibold text-slate-900 hover:text-teal-700">
+                    {thread.title}
+                  </Link>
+                  {preview && <p className="mt-1 line-clamp-2 text-xs text-slate-600">{preview}</p>}
+
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    {new Date(thread.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+
+                  {/* Notifications for this topic, on its own row */}
+                  <button
+                    type="button"
+                    onClick={() => toggleMute(thread._id, isMuted)}
+                    className={`mt-auto flex items-center gap-1.5 pt-3 text-xs font-medium ${
+                      isMuted ? 'text-red-600 hover:text-red-700' : 'text-slate-600 hover:text-slate-800'
+                    }`}
+                  >
+                    {isMuted ? <MdNotificationsOff size={16} aria-hidden="true" /> : <MdNotifications size={16} aria-hidden="true" />}
+                    <span>{isMuted ? 'Notifications muted - turn on' : 'Mute notifications'}</span>
+                  </button>
+                </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between sm:justify-center sm:gap-6 mt-3 text-sm">
+                <div className="grid grid-cols-2 border-t border-slate-100 text-sm font-semibold">
                   <button
                     type="button"
                     onClick={() => handleEditClick(thread._id)}
-                    className="text-teal-700 hover:text-teal-900 active:underline font-semibold py-1"
+                    className="flex items-center justify-center gap-1.5 border-r border-slate-100 py-2.5 text-teal-700 hover:bg-teal-50"
                   >
-                    Edit
+                    <FaPen size={12} aria-hidden="true" /> Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteClick(thread)}
-                    className="text-red-600 hover:text-red-700 active:underline font-semibold py-1"
+                    className="flex items-center justify-center gap-1.5 py-2.5 text-red-600 hover:bg-red-50"
                   >
-                    Delete
+                    <FaTrash size={12} aria-hidden="true" /> Delete
                   </button>
                 </div>
               </div>

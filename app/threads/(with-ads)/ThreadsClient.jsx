@@ -850,7 +850,7 @@ const ThreadsPage = ({ heading, initialData = null }) => {
 
                       {/* Metadata */}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                        <span>{thread.isCuratedThread ? 'Desify Team' : (thread.ownerName || 'Former Member')}</span>
+                        <span>{thread.ownerName || (thread.isCuratedThread ? 'Desify Team' : 'Former Member')}</span>
                         <span>•</span>
                         <span>{getPostedText(thread.createdAt)}</span>
                         <span>•</span>

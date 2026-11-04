@@ -1,235 +1,157 @@
 'use client';
-
+// Admin moderation of one thread (feature 1012). On someone else's thread an admin can only change
+// the category, turn the group chat on or off, or delete it - never the writer's words or pictures.
+// The admin's own threads open in the normal edit page ("Edit full post").
 import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  updateThread,
-  fetchThreadById,
-} from '@/store/slices/threads/threadSlice';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import Link from 'next/link';
 import { toast } from 'react-toastify';
+import axios from '@/utils/axiosConfig';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { threadCategoryOptions } from '@/components/threads/categories';
+import { buildSlugUrl } from '@/utils/slugUtils';
 
-const categoryOptions = [
-  'Education',
-  'Migration',
-  'Travel',
-  'Jobs',
-  'Entertainment & Hobbies',
-  'Baby & Children',
-  'Arts & Crafts',
-  'Cars & Vehicles',
-  'Fashion & Accessories',
-  'Electronics & Computer',
-  'Home & Garden',
-  'Miscellaneous',
-  'Pets',
-  'Real Estate',
-  'Party Hires & Services',
-  'Sport & Fitness',
-  'Food & Catering Services',
-  'Health & Beauty',
-  'Business & Shops',
-  'Events & Community',
-  'Services',
-  'Travel Partner',
-  'financial aid',
-];
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const EditThreadPage = () => {
-  const dispatch = useDispatch();
+export default function ModerateThreadPage() {
+  const { id: threadId } = useParams() || {};
   const router = useRouter();
-  const params = useParams();
-  const threadId = params?.id;
+  const currentUser = useSelector((state) => state.user.user);
 
-  const thread = useSelector((state) => state.threads.selectedThread);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    question: '',
-    category: '',
-    images: [],
-  });
-  const [existingImages, setExistingImages] = useState([]);
-  const [preview, setPreview] = useState([]);
+  const [thread, setThread] = useState(null);
+  const [category, setCategory] = useState('');
+  const [allowChat, setAllowChat] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (threadId) {
-      dispatch(fetchThreadById(threadId));
-    }
-  }, [dispatch, threadId]);
+    if (!threadId) return;
+    (async () => {
+      try {
+        const { data } = await axios.get(`${BASE_URL}/threads/public/${threadId}`);
+        const t = data.thread || data;
+        setThread(t);
+        setCategory(t.category || '');
+        setAllowChat(t.allowChat !== false);
+      } catch {
+        toast.error('Could not load this thread.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [threadId]);
 
-  useEffect(() => {
-    console.log('[EditPage] thread from Redux:', thread);
-    if (thread) {
-      console.log('[EditPage] Populating form with fetched thread data');
-      setFormData({
-        title: thread.title || '',
-        question: thread.question || '',
-        category: thread.category || '',
-        images: [],
+  const save = async () => {
+    setSaving(true);
+    try {
+      const body = { allowChat };
+      if (category && category !== thread.category) body.category = category;
+      const { data } = await axios.patch(`${BASE_URL}/admin/threads/${threadId}/moderate`, body, {
+        withCredentials: true,
       });
-      setExistingImages(thread.images || []);
-      setPreview((thread.images || []).map((img) => img.url));
-    }
-  }, [thread]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length + preview.length > 10) {
-      alert('You can upload up to 10 images only.');
-      return;
-    }
-    
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
-    const validFiles = files.filter(file => {
-      if (!allowedTypes.includes(file.type)) {
-        alert(`Unsupported file type: ${file.name}. Only JPEG, PNG, WebP, and GIF formats are allowed.`);
-        return false;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} is too large. Each image must be under 5MB.`);
-        return false;
-      }
-      return true;
-    });
-    
-    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-    setPreview((prev) => [...prev, ...newPreviews]);
-    setFormData((prev) => ({ ...prev, images: [...prev.images, ...validFiles] }));
-  };
-
-  const handleRemoveImage = (index) => {
-    if (index < existingImages.length) {
-      const updated = [...existingImages];
-      updated.splice(index, 1);
-      setExistingImages(updated);
-    } else {
-      const adjustedIndex = index - existingImages.length;
-      setFormData((prev) => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== adjustedIndex),
-      }));
-    }
-    setPreview((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { title, question, category, images } = formData;
-
-    if (!title || !question || !category) {
-      toast.error('All fields are required.');
-      return;
-    }
-
-    const formPayload = new FormData();
-    formPayload.append('title', title);
-    formPayload.append('question', question);
-    formPayload.append('category', category);
-    existingImages.forEach((img) =>
-      formPayload.append('existingImages', JSON.stringify(img))
-    );
-    images.forEach((file) => formPayload.append('images', file));
-
-    const result = await dispatch(
-      updateThread({ threadId, formData: formPayload })
-    );
-
-    if (updateThread.fulfilled.match(result)) {
-      toast.success('Thread updated successfully.');
-      router.push('/users/profile/managethreads');
-    } else {
-      toast.error(result.payload || 'Failed to update thread.');
+      setThread((t) => ({ ...t, ...data.thread }));
+      toast.success('Saved.');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Could not save.');
+    } finally {
+      setSaving(false);
     }
   };
+
+  const remove = async () => {
+    if (!confirm('Delete this thread and its chat? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      await axios.delete(`${BASE_URL}/admin/threads/byid/${threadId}`, { withCredentials: true });
+      toast.success('Thread deleted.');
+      router.push('/admin/profile/threads/moderation');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Could not delete.');
+      setDeleting(false);
+    }
+  };
+
+  if (loading) return <LoadingSpinner />;
+  if (!thread) return <p className="p-4 text-slate-600">Thread not found.</p>;
+
+  const ownerId = thread.owner?._id || thread.owner;
+  const isMine = currentUser?._id && String(ownerId) === String(currentUser._id);
+  const legacyCategory = thread.category && !threadCategoryOptions.includes(thread.category);
+  const viewUrl = buildSlugUrl('thread', thread.title, thread._id);
 
   return (
-    <div className="max-w-xl mx-auto p-6 mt-10 bg-white border rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Edit Thread</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          name="title"
-          value={formData.title || ''}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          placeholder="Thread Title"
-          required
-        />
-        <textarea
-          name="question"
-          value={formData.question || ''}
-          onChange={handleChange}
-          className="w-full p-2 border rounded"
-          placeholder="Describe your question..."
-          required
-        />
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange || ''}
-          className="w-full p-2 border rounded"
-          required
-        >
-          <option value="">Select Category</option>
-          {categoryOptions.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+    <div className="mx-auto max-w-xl space-y-5 p-4">
+      <div>
+        <Link href="/admin/profile/threads/moderation" className="text-sm text-teal-700 underline">
+          Back to thread moderation
+        </Link>
+        <h1 className="mt-2 text-xl font-bold text-slate-900">Moderate thread</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          You can change the category, turn the group chat on or off, or delete the thread. The
+          writer&apos;s words and pictures can only be changed by the writer.
+        </p>
+      </div>
 
-        <div>
-          <label className="font-semibold block mb-1">Images (Max 10, 5MB each)</label>
-          <input
-            type="file"
-            multiple
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-            onChange={handleFileChange}
-            className="w-full p-2 border rounded"
-          />
-          <div className="flex gap-4 mt-4 flex-wrap">
-            {preview.map((src, idx) => (
-              <div key={idx} className="relative">
-                <img
-                  src={src}
-                  alt={`img-${idx}`}
-                  className="w-24 h-24 object-cover border"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(idx)}
-                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
-                >
-                  X
-                </button>
-              </div>
-            ))}
-          </div>
+      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+        <p className="font-semibold text-slate-900" data-testid="moderate-title">{thread.title}</p>
+        <p className="mt-1 text-slate-600">Account: {thread.owner?.name || 'Unknown'}</p>
+        {thread.author?.name && <p className="text-slate-600">Author name shown: {thread.author.name}</p>}
+        <div className="mt-3 flex flex-wrap gap-3">
+          <Link href={viewUrl} target="_blank" className="text-teal-700 underline">View thread</Link>
+          {isMine && (
+            <Link href={`/threads/edit/${thread._id}`} className="text-teal-700 underline">Edit full post</Link>
+          )}
         </div>
+      </div>
 
-        <div className="flex justify-between mt-4">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <div>
+          <label htmlFor="moderate-category" className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+          <select
+            id="moderate-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="h-11 w-full rounded-lg border border-slate-300 px-2 text-base sm:text-sm"
           >
-            Update Thread
+            {legacyCategory && <option value={thread.category}>{thread.category} (old category)</option>}
+            {threadCategoryOptions.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={allowChat}
+            onChange={(e) => setAllowChat(e.target.checked)}
+            className="mt-1 h-5 w-5 accent-teal-700"
+          />
+          <span>
+            <span className="block text-sm font-medium text-slate-700">Allow group chat on this post</span>
+            <span className="block text-xs text-slate-500">Off: readers see no chat box and nobody can send messages. Old messages are kept.</span>
+          </span>
+        </label>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="h-11 rounded-lg bg-teal-700 px-5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Save'}
           </button>
           <button
             type="button"
-            onClick={() => router.back()}
-            className="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-500"
+            onClick={remove}
+            disabled={deleting}
+            className="h-11 rounded-lg bg-red-600 px-5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
           >
-            Cancel
+            {deleting ? 'Deleting...' : 'Delete thread'}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
-};
-
-export default EditThreadPage;
+}
