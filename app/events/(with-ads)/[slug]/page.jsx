@@ -1,5 +1,9 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
+import { notFound, unstable_rethrow } from 'next/navigation';
+import { detailPageRobots, isEventIndexable } from '@/utils/seo/pageRobots';
 import EventDetailContent from '@/components/events/eventcomponents/EventDetailContent';
+import EventStatusNote from '@/components/events/eventcomponents/EventStatusNote';
+import { eventStatusFor } from '@/utils/helpers/events/eventStatus';
 import { buildEventJsonLd } from '@/utils/helpers/events/eventJsonLd';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -30,6 +34,9 @@ export async function generateMetadata({ params }) {
       }
     });
     
+    // Deleted: the page answers a real 404 (feature 1013).
+    if (response.status === 404) notFound();
+
     if (!response.ok) {
       throw new Error('Event not found');
     }
@@ -110,6 +117,8 @@ export async function generateMetadata({ params }) {
       // Canonical grouping (events-seo-canonical.md): when this event points at a hero
       // via seoCanonicalEventId, the backend resolves the hero's URL into seoCanonicalUrl;
       // use it so multi-part events consolidate onto the hero. Else self-canonical.
+      // Switched off by the organiser: hidden from search.
+      robots: detailPageRobots(isEventIndexable(event)),
       alternates: { canonical: event.seoCanonicalUrl || url },
       openGraph: {
         title: resolvedTitle, // No branding for WhatsApp
@@ -135,6 +144,7 @@ export async function generateMetadata({ params }) {
       },
     };
   } catch (error) {
+    unstable_rethrow(error); // let notFound() through
     console.error('Error fetching event for meta tags:', error);
     return {
       title: 'Event - Desify',
@@ -143,37 +153,45 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Simple not-found view (server-rendered, no redirect)
-function EventNotFound() {
-  return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-      <div className="text-center">
-        <p className="text-slate-700">Event not found</p>
-        <a href="/events" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
-          Browse events
-        </a>
-      </div>
-    </div>
-  );
+// Up to 3 upcoming events (not this one) for the finished / cancelled note. Uses the homepage
+// feed (published, upcoming, not cancelled or blocked). Any failure -> no links, page still renders.
+async function fetchUpcomingEvents(excludeId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/home/events`, {
+      headers: { 'x-api-key': process.env.NEXT_PUBLIC_FRONTEND_API_KEY || '' },
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return [];
+    const json = await response.json();
+    const events = json?.data?.events || [];
+    return events.filter((e) => String(e._id) !== String(excludeId)).slice(0, 3);
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    return [];
+  }
 }
 
+// The not-found view lives in ./not-found.jsx: notFound() renders it with a real 404.
 export default async function EventSlugPage({ params }) {
   const { slug } = await params;
   const eventId = extractIdFromSlug(slug);
 
   if (!eventId || !API_BASE_URL) {
-    return <EventNotFound />;
+    notFound();
   }
 
   // Fetch the event on the server so its content is in the HTML (SEO).
   // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
   // fetchEventById returns the event object directly.
   let event = null;
+  let gone = false;
   try {
     const response = await fetch(`${API_BASE_URL}/events/views/${eventId}`, {
       next: { revalidate: 300, tags: [`event-${eventId}`] },
     });
-    if (response.ok) {
+    if (response.status === 404) {
+      gone = true;
+    } else if (response.ok) {
       const json = await response.json();
       event = json?._id ? json : (json?.event || null);
     }
@@ -181,9 +199,16 @@ export default async function EventSlugPage({ params }) {
     console.error('Error fetching event:', error);
   }
 
-  if (!event) {
-    return <EventNotFound />;
-  }
+  // Deleted (backend 404): real 404 status with the not-found view, so Google drops the page.
+  if (gone) notFound();
+  // Backend down or unreadable answer: an error (5xx), never a 404 - Google retries later.
+  if (!event) throw new Error(`Event ${eventId} could not be loaded`);
+
+  // Finished or cancelled: a note at the top with links to upcoming events (feature 1013).
+  const statusState = eventStatusFor(event);
+  const statusNote = statusState ? (
+    <EventStatusNote state={statusState} upcoming={await fetchUpcomingEvents(event._id)} />
+  ) : null;
 
   // Structured data — Event JSON-LD (Google rich event results)
   const jsonLd = buildEventJsonLd(event, `${META_DEFAULTS.siteUrl}/events/${slug}`);
@@ -196,7 +221,7 @@ export default async function EventSlugPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <EventDetailContent event={event} />
+      <EventDetailContent event={event} statusNote={statusNote} />
     </>
   );
 }

@@ -14,7 +14,9 @@ import { buildSlugUrl } from '@/utils/slugUtils';
 // app/events/(with-ads)/[slug]/page.jsx and passed in as a prop (no client
 // fetch), so the content is in the server HTML for SEO. Interactive parts
 // (tickets, RSVP, chat, share) hydrate in the browser.
-const EventDetailContent = ({ event }) => {
+// statusNote: optional server-rendered "ended" / "cancelled" banner (EventStatusNote), shown under
+// the navigation bar.
+const EventDetailContent = ({ event, statusNote = null }) => {
   const router = useRouter();
   const id = event._id;
   const eventUrl = buildSlugUrl('event', event.title, event._id);
@@ -63,6 +65,8 @@ const EventDetailContent = ({ event }) => {
           returnUrl={eventUrl}
         />
       </div>
+
+      {statusNote}
 
       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
         {/* Event Details */}

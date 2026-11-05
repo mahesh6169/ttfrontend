@@ -1,4 +1,5 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
+import { notFound, unstable_rethrow } from 'next/navigation';
 import ThreadDetailContent from '@/components/threads/ThreadDetailContent';
 import { buildThreadJsonLd } from '@/utils/helpers/threads/threadJsonLd';
 
@@ -36,6 +37,9 @@ export async function generateMetadata({ params }) {
     
     clearTimeout(timeoutId);
     
+    // Deleted: the page answers a real 404 (feature 1013).
+    if (response.status === 404) notFound();
+
     if (!response.ok) {
       throw new Error('Thread not found');
     }
@@ -121,6 +125,7 @@ export async function generateMetadata({ params }) {
     
     return metadata;
   } catch (error) {
+    unstable_rethrow(error); // let notFound() through
     console.error('Error fetching thread for meta tags:', error);
     return {
       title: 'Topic - Desify',
@@ -129,36 +134,26 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Simple not-found view (server-rendered, no redirect)
-function ThreadNotFound() {
-  return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-      <div className="text-center">
-        <p className="text-slate-700">Topic not found</p>
-        <a href="/threads" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
-          Browse threads
-        </a>
-      </div>
-    </div>
-  );
-}
-
+// The not-found view lives in ./not-found.jsx: notFound() renders it with a real 404.
 export default async function ThreadSlugPage({ params }) {
   const { slug } = await params;
   const threadId = extractIdFromSlug(slug);
 
   if (!threadId || !API_BASE_URL) {
-    return <ThreadNotFound />;
+    notFound();
   }
 
   // Fetch the thread on the server so its title + question are in the HTML (SEO).
   // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
   let thread = null;
+  let gone = false;
   try {
     const response = await fetch(`${API_BASE_URL}/threads/public/${threadId}`, {
       next: { revalidate: 3600, tags: [`thread-${threadId}`] },
     });
-    if (response.ok) {
+    if (response.status === 404) {
+      gone = true;
+    } else if (response.ok) {
       const json = await response.json();
       thread = json?.thread || null;
     }
@@ -166,9 +161,10 @@ export default async function ThreadSlugPage({ params }) {
     console.error('Error fetching thread:', error);
   }
 
-  if (!thread) {
-    return <ThreadNotFound />;
-  }
+  // Deleted (backend 404): real 404 status with the not-found view, so Google drops the page.
+  if (gone) notFound();
+  // Backend down or unreadable answer: an error (5xx), never a 404 - Google retries later.
+  if (!thread) throw new Error(`Topic ${threadId} could not be loaded`);
 
   // Structured data — DiscussionForumPosting JSON-LD (forum content)
   const jsonLd = buildThreadJsonLd(thread, `${META_DEFAULTS.siteUrl}/threads/${slug}`);

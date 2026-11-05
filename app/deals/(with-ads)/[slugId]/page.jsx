@@ -1,4 +1,6 @@
 import { extractIdFromSlug, META_DEFAULTS } from '@/utils/slugUtils';
+import { notFound, unstable_rethrow } from 'next/navigation';
+import { detailPageRobots, isDealIndexable } from '@/utils/seo/pageRobots';
 import { format } from 'date-fns';
 import { formatValidDays } from '@/utils/couponSchedule';
 import DealDetailContent from '@/components/dailydeals/dealcomponents/DealDetailContent';
@@ -32,6 +34,9 @@ export async function generateMetadata({ params }) {
     });
 
     clearTimeout(timeoutId);
+
+    // Deleted: the page answers a real 404 (feature 1013).
+    if (response.status === 404) notFound();
 
     if (!response.ok) {
       throw new Error('Deal not found');
@@ -76,6 +81,8 @@ export async function generateMetadata({ params }) {
     return {
       title: { absolute: title },
       description,
+      // Ended or switched off: page stays but is hidden from search.
+      robots: detailPageRobots(isDealIndexable(deal)),
       alternates: { canonical: url },
       openGraph: {
         title,
@@ -101,6 +108,7 @@ export async function generateMetadata({ params }) {
       },
     };
   } catch (error) {
+    unstable_rethrow(error); // let notFound() through
     console.error('Error fetching deal for meta tags:', error);
     const fallbackImage = process.env.NEXT_PUBLIC_FALLBACK_DEAL_IMAGE_URL;
     return {
@@ -124,36 +132,26 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Simple not-found view (server-rendered, no redirect)
-function DealNotFound() {
-  return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-      <div className="text-center">
-        <p className="text-slate-700">Deal not found</p>
-        <a href="/deals" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
-          Browse deals
-        </a>
-      </div>
-    </div>
-  );
-}
-
+// The not-found view lives in ./not-found.jsx: notFound() renders it with a real 404.
 export default async function DealSlugPage({ params }) {
   const { slugId } = await params;
   const dealId = extractIdFromSlug(slugId);
 
   if (!dealId || !API_BASE_URL) {
-    return <DealNotFound />;
+    notFound();
   }
 
   // Fetch the deal on the server so its content is in the HTML (SEO).
   // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
   let deal = null;
+  let gone = false;
   try {
     const response = await fetch(`${API_BASE_URL}/dailydeals/view/${dealId}`, {
       next: { revalidate: 3600, tags: [`deal-${dealId}`] },
     });
-    if (response.ok) {
+    if (response.status === 404) {
+      gone = true;
+    } else if (response.ok) {
       const json = await response.json();
       deal = json?.deal || null;
     }
@@ -161,9 +159,10 @@ export default async function DealSlugPage({ params }) {
     console.error('Error fetching deal:', error);
   }
 
-  if (!deal) {
-    return <DealNotFound />;
-  }
+  // Deleted (backend 404): real 404 status with the not-found view, so Google drops the page.
+  if (gone) notFound();
+  // Backend down or unreadable answer: an error (5xx), never a 404 - Google retries later.
+  if (!deal) throw new Error(`Deal ${dealId} could not be loaded`);
 
   // Structured data — Offer JSON-LD (seller = partner store LocalBusiness)
   const jsonLd = buildDealJsonLd(deal, `${META_DEFAULTS.siteUrl}/deals/${slugId}`);

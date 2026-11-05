@@ -224,10 +224,38 @@ test.describe('past events', () => {
   });
 });
 
+// Feature 1013: a finished event keeps its page (Google can still show it) with a note and links to
+// upcoming events; an organiser-cancelled event says so and is marked cancelled for Google.
+test('a finished event page says it has ended and links to upcoming events; a cancelled one says so and tells Google', async ({ page }) => {
+  const seed = readSeed();
+
+  await page.goto(`/events/${seed.pastUnfeaturedEventId}`);
+  const ended = page.getByTestId('event-status-note');
+  await expect(ended).toBeVisible({ timeout: 20_000 });
+  await expect(ended).toContainText('This event has ended');
+  await expect(ended.getByRole('link', { name: 'See all upcoming events' })).toHaveAttribute('href', '/events');
+  // At least one upcoming event is linked besides "See all".
+  expect(await ended.getByRole('link').count()).toBeGreaterThan(1);
+
+  await page.goto(`/events/${seed.pastEndedEventId}`); // organiser soft-deleted = cancelled
+  const cancelled = page.getByTestId('event-status-note');
+  await expect(cancelled).toBeVisible({ timeout: 20_000 });
+  await expect(cancelled).toContainText('This event was cancelled');
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.join(' ')).toContain('https://schema.org/EventCancelled');
+
+  // An upcoming event has no note.
+  await page.goto(`/events/${seed.freeEventId}`);
+  await expect(page.getByRole('heading', { name: seed.freeEventTitle })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('event-status-note')).toHaveCount(0);
+});
+
 test('the public page of a blocked event reads unavailable, with no Register or Purchase action', async ({ page }) => {
   const seed = readSeed();
   // The canonical /events/{slug} route (extractIdFromSlug also accepts a bare id).
-  await page.goto(`/events/${seed.blockedDetailEventId}`);
+  // A blocked event reads as not found, with a real 404 status (feature 1013).
+  const res = await page.goto(`/events/${seed.blockedDetailEventId}`);
+  expect(res.status()).toBe(404);
   await expect(page.getByText('Event not found')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('button', { name: 'Register for Event' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Purchase Tickets' })).toHaveCount(0);

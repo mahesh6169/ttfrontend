@@ -12,7 +12,6 @@
 // The top ad varies per section (EventTopAd, TopAd, ThreadTopAd, ...), so it is
 // passed in as the `topAd` slot; the side ads are shared. The site footer is not
 // here - it is rendered once globally in app/layout.jsx.
-import { Suspense } from 'react';
 import LeftAd from '@/components/ads/LeftAd';
 import RightAd from '@/components/ads/RightAd';
 import StateSelector from '@/components/ads/StateSelector';
@@ -26,9 +25,10 @@ const AdsFrame = ({ topAd = null, children }) => {
       <div className="flex gap-2 md:flex-1">
         <LeftAd />
         <div id="Main" className="flex-1 min-w-0">
-          <Suspense>
-            <AdsContentShell>{children}</AdsContentShell>
-          </Suspense>
+          {/* No <Suspense> around the page (feature 1013): a boundary here let the frame stream out
+              with status 200 before the page ran, so notFound() on a deleted item could never send a
+              real 404. Nothing inside needs one (no useSearchParams in the with-ads pages). */}
+          <AdsContentShell>{children}</AdsContentShell>
         </div>
         <RightAd />
       </div>
