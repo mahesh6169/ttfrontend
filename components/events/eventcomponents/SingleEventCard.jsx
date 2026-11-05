@@ -107,7 +107,9 @@ const getOptimizedImageUrl = (imageObj, size = 'auto') => {
   return imageObj.url || null;
 };
 
-const SingleEventCard = ({ event, chatProps }) => {
+// statusBadge: 'ended' | 'cancelled' | null - pill on the photo (feature 1013).
+// mobileExtra: optional node shown on phones just before the chat box (upcoming events).
+const SingleEventCard = ({ event, chatProps, statusBadge = null, mobileExtra = null }) => {
   const FALLBACK_IMAGE = process.env.NEXT_PUBLIC_FALLBACK_EVENT_IMAGE_URL;
   const dispatch = useDispatch();
   const router = useRouter();
@@ -467,6 +469,18 @@ const SingleEventCard = ({ event, chatProps }) => {
           className="object-contain w-full h-full cursor-pointer"
           onClick={() => setIsFullscreen(true)}
         />
+        {/* Finished / cancelled marker - same dark pill as the Past events cards; cancelled is red
+            so nobody turns up (feature 1013). */}
+        {statusBadge && (
+          <span
+            data-testid="event-status-badge"
+            className={`absolute top-2 left-2 z-10 rounded-full px-3 py-1 text-xs font-semibold text-white pointer-events-none ${
+              statusBadge === 'cancelled' ? 'bg-red-700' : 'bg-slate-800/90'
+            }`}
+          >
+            {statusBadge === 'cancelled' ? 'Cancelled' : 'Ended'}
+          </span>
+        )}
   {/* Fullscreen hint */}
   {event.images?.length > 0 && (
     <div 
@@ -1117,6 +1131,8 @@ const SingleEventCard = ({ event, chatProps }) => {
           </a>
         </div>
       )}
+
+      {mobileExtra && <div className="block lg:hidden px-2 my-4">{mobileExtra}</div>}
 
       {/* Chat Container - Mobile Only (At the bottom) */}
       {chatProps && (

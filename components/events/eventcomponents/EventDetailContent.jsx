@@ -8,15 +8,17 @@ import SendMessage from '@/components/chat/SendMessage';
 import ReportLink from '@/components/support/ReportLink';
 import ShareIcons from '@/components/shared/ShareIcons';
 import BackButton from '@/components/BackButton';
+import UpcomingEventsList from '@/components/events/eventcomponents/UpcomingEventsList';
 import { buildSlugUrl } from '@/utils/slugUtils';
 
 // Client detail view for a single event. The event is fetched server-side in
 // app/events/(with-ads)/[slug]/page.jsx and passed in as a prop (no client
 // fetch), so the content is in the server HTML for SEO. Interactive parts
 // (tickets, RSVP, chat, share) hydrate in the browser.
-// statusNote: optional server-rendered "ended" / "cancelled" banner (EventStatusNote), shown under
-// the navigation bar.
-const EventDetailContent = ({ event, statusNote = null }) => {
+// eventStatus: 'ended' | 'cancelled' | null - a pill on the photo (feature 1013).
+// upcomingEvents: shown for ended / cancelled events - right column on desktop, after the event
+// details on phones; nothing when empty.
+const EventDetailContent = ({ event, eventStatus = null, upcomingEvents = [] }) => {
   const router = useRouter();
   const id = event._id;
   const eventUrl = buildSlugUrl('event', event.title, event._id);
@@ -66,13 +68,15 @@ const EventDetailContent = ({ event, statusNote = null }) => {
         />
       </div>
 
-      {statusNote}
-
       <div className="flex flex-col lg:flex-row lg:items-start gap-4">
         {/* Event Details */}
         <div className="flex-[7] bg-white w-full">
           <SingleEventCard
             event={event}
+            statusBadge={eventStatus}
+            mobileExtra={upcomingEvents.length ? (
+              <UpcomingEventsList events={upcomingEvents} testId="upcoming-events-mobile" />
+            ) : null}
             chatProps={{
               resourceId: id,
               resourceType: 'event',
@@ -136,6 +140,12 @@ const EventDetailContent = ({ event, statusNote = null }) => {
               )}
             </div>
           </div>
+
+          {upcomingEvents.length > 0 && (
+            <div className="px-1">
+              <UpcomingEventsList events={upcomingEvents} testId="upcoming-events" />
+            </div>
+          )}
         </div>
       </div>
     </div>

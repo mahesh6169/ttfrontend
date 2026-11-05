@@ -2,7 +2,6 @@ import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugU
 import { notFound, unstable_rethrow } from 'next/navigation';
 import { detailPageRobots, isEventIndexable } from '@/utils/seo/pageRobots';
 import EventDetailContent from '@/components/events/eventcomponents/EventDetailContent';
-import EventStatusNote from '@/components/events/eventcomponents/EventStatusNote';
 import { eventStatusFor } from '@/utils/helpers/events/eventStatus';
 import { buildEventJsonLd } from '@/utils/helpers/events/eventJsonLd';
 
@@ -153,7 +152,7 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Up to 3 upcoming events (not this one) for the finished / cancelled note. Uses the homepage
+// Up to 3 upcoming events (not this one) for a finished / cancelled event's page. Uses the homepage
 // feed (published, upcoming, not cancelled or blocked). Any failure -> no links, page still renders.
 async function fetchUpcomingEvents(excludeId) {
   try {
@@ -204,11 +203,10 @@ export default async function EventSlugPage({ params }) {
   // Backend down or unreadable answer: an error (5xx), never a 404 - Google retries later.
   if (!event) throw new Error(`Event ${eventId} could not be loaded`);
 
-  // Finished or cancelled: a note at the top with links to upcoming events (feature 1013).
-  const statusState = eventStatusFor(event);
-  const statusNote = statusState ? (
-    <EventStatusNote state={statusState} upcoming={await fetchUpcomingEvents(event._id)} />
-  ) : null;
+  // Finished or cancelled: an "Ended" / "Cancelled" pill on the photo plus a list of upcoming
+  // events (feature 1013). The list is only fetched for those events and hidden when empty.
+  const eventStatus = eventStatusFor(event);
+  const upcomingEvents = eventStatus ? await fetchUpcomingEvents(event._id) : [];
 
   // Structured data — Event JSON-LD (Google rich event results)
   const jsonLd = buildEventJsonLd(event, `${META_DEFAULTS.siteUrl}/events/${slug}`);
@@ -221,7 +219,7 @@ export default async function EventSlugPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <EventDetailContent event={event} statusNote={statusNote} />
+      <EventDetailContent event={event} eventStatus={eventStatus} upcomingEvents={upcomingEvents} />
     </>
   );
 }

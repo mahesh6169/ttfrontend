@@ -224,30 +224,31 @@ test.describe('past events', () => {
   });
 });
 
-// Feature 1013: a finished event keeps its page (Google can still show it) with a note and links to
-// upcoming events; an organiser-cancelled event says so and is marked cancelled for Google.
-test('a finished event page says it has ended and links to upcoming events; a cancelled one says so and tells Google', async ({ page }) => {
+// Feature 1013: a finished event keeps its page (Google can still show it) with a dark "Ended" pill
+// on the photo and upcoming events in the right column; an organiser-cancelled event gets a red
+// "Cancelled" pill and is marked cancelled for Google. An upcoming event has neither.
+test('a finished event shows an Ended pill and upcoming events; a cancelled one shows Cancelled and tells Google', async ({ page }) => {
   const seed = readSeed();
 
   await page.goto(`/events/${seed.pastUnfeaturedEventId}`);
-  const ended = page.getByTestId('event-status-note');
-  await expect(ended).toBeVisible({ timeout: 20_000 });
-  await expect(ended).toContainText('This event has ended');
-  await expect(ended.getByRole('link', { name: 'See all upcoming events' })).toHaveAttribute('href', '/events');
+  await expect(page.getByTestId('event-status-badge')).toHaveText('Ended', { timeout: 20_000 });
+  const side = page.getByTestId('upcoming-events'); // desktop right column
+  await expect(side).toBeVisible();
+  await expect(side.getByRole('heading', { name: 'Upcoming events' })).toBeVisible();
+  await expect(side.getByRole('link', { name: 'See all upcoming events' })).toHaveAttribute('href', '/events');
   // At least one upcoming event is linked besides "See all".
-  expect(await ended.getByRole('link').count()).toBeGreaterThan(1);
+  expect(await side.getByRole('link').count()).toBeGreaterThan(1);
 
   await page.goto(`/events/${seed.pastEndedEventId}`); // organiser soft-deleted = cancelled
-  const cancelled = page.getByTestId('event-status-note');
-  await expect(cancelled).toBeVisible({ timeout: 20_000 });
-  await expect(cancelled).toContainText('This event was cancelled');
+  await expect(page.getByTestId('event-status-badge')).toHaveText('Cancelled', { timeout: 20_000 });
   const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(jsonLd.join(' ')).toContain('https://schema.org/EventCancelled');
 
-  // An upcoming event has no note.
+  // An upcoming event has no pill and no upcoming list.
   await page.goto(`/events/${seed.freeEventId}`);
   await expect(page.getByRole('heading', { name: seed.freeEventTitle })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByTestId('event-status-note')).toHaveCount(0);
+  await expect(page.getByTestId('event-status-badge')).toHaveCount(0);
+  await expect(page.getByTestId('upcoming-events')).toHaveCount(0);
 });
 
 test('the public page of a blocked event reads unavailable, with no Register or Purchase action', async ({ page }) => {
