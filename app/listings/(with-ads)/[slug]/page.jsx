@@ -122,7 +122,7 @@ export async function generateMetadata({ params }) {
       title: { absolute: title },
       description,
       // Expired or switched-off: page stays (owner can renew) but is hidden from search.
-      robots: detailPageRobots(isListingIndexable(listing)),
+      ...detailPageRobots(isListingIndexable(listing)),
       alternates: { canonical: url },
       openGraph: {
         title, // No branding for WhatsApp

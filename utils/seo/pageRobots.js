@@ -4,12 +4,14 @@
 // environment policy (utils/seo/indexingPolicy.js): staging stays noindex,nofollow everywhere.
 import { currentIndexingPolicy } from './indexingPolicy.js';
 
-// robots metadata for a detail page. indexable=true -> undefined (inherit the root layout's
-// policy, as before); indexable=false -> noindex, links still followed where the policy allows.
+// Metadata fields to SPREAD into a detail page's metadata: `...detailPageRobots(ok)`.
+// indexable=true -> {} (no robots key at all, so the root layout's robots + googleBot settings
+// apply as before - an explicit `robots: undefined` would wipe them); indexable=false ->
+// { robots: noindex }, links still followed where the policy allows.
 export function detailPageRobots(indexable) {
-  if (indexable) return undefined;
+  if (indexable) return {};
   const policy = currentIndexingPolicy();
-  return { index: false, follow: policy.follow };
+  return { robots: { index: false, follow: policy.follow } };
 }
 
 const isPast = (date, now) => {

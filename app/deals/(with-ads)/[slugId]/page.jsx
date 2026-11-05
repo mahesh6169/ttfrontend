@@ -82,7 +82,7 @@ export async function generateMetadata({ params }) {
       title: { absolute: title },
       description,
       // Ended or switched off: page stays but is hidden from search.
-      robots: detailPageRobots(isDealIndexable(deal)),
+      ...detailPageRobots(isDealIndexable(deal)),
       alternates: { canonical: url },
       openGraph: {
         title,

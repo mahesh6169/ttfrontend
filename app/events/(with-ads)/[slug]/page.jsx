@@ -118,7 +118,7 @@ export async function generateMetadata({ params }) {
       // via seoCanonicalEventId, the backend resolves the hero's URL into seoCanonicalUrl;
       // use it so multi-part events consolidate onto the hero. Else self-canonical.
       // Switched off by the organiser: hidden from search.
-      robots: detailPageRobots(isEventIndexable(event)),
+      ...detailPageRobots(isEventIndexable(event)),
       alternates: { canonical: event.seoCanonicalUrl || url },
       openGraph: {
         title: resolvedTitle, // No branding for WhatsApp
