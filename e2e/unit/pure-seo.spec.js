@@ -8,6 +8,7 @@ import { resolveIndexingPolicy, PRODUCTION_ORIGIN } from '../../utils/seo/indexi
 import { isListingIndexable, isDealIndexable, isEventIndexable } from '../../utils/seo/pageRobots.js';
 import { eventStatusFor } from '../../utils/helpers/events/eventStatus.js';
 import { buildEventJsonLd } from '../../utils/helpers/events/eventJsonLd.js';
+import { isSalesClosed } from '../../utils/events/salesCutoff.js';
 
 const FAIL_CLOSED_CASES = [
   { name: 'missing origin', allowIndexing: true, origin: undefined },
@@ -80,4 +81,12 @@ test('event structured data says cancelled for an organiser-cancelled event, sch
   expect(buildEventJsonLd(base, 'https://desify.com.au/events/x').eventStatus).toBe('https://schema.org/EventScheduled');
   expect(buildEventJsonLd({ ...base, deletedByOrganiser: true }, 'https://desify.com.au/events/x').eventStatus)
     .toBe('https://schema.org/EventCancelled');
+});
+
+test('a cancelled event closes registrations and ticket sales even before its date', () => {
+  const now = new Date('2026-11-06T00:00:00Z');
+  const future = { dateTime: '2026-11-25T02:00:00Z', timeZone: 'Australia/Perth' };
+  expect(isSalesClosed(future, now)).toBe(false);
+  expect(isSalesClosed({ ...future, deletedByOrganiser: true }, now)).toBe(true);
+  expect(isSalesClosed({ ...future, deletedByOrganiser: false }, now)).toBe(false);
 });
