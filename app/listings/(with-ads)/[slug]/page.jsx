@@ -1,7 +1,8 @@
 import { extractIdFromSlug, isValidObjectId, META_DEFAULTS } from '@/utils/slugUtils';
-import { headers } from 'next/headers';
+import { notFound, unstable_rethrow } from 'next/navigation';
 import AdvertDetailContent from '@/components/adverts/advertcomponents/AdvertDetailContent';
 import { buildListingJsonLd } from '@/utils/helpers/adverts/listingJsonLd';
+import { detailPageRobots, isListingIndexable } from '@/utils/seo/pageRobots';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -37,6 +38,9 @@ export async function generateMetadata({ params }) {
     
     clearTimeout(timeoutId);
     
+    // A deleted listing: the page answers a real 404 (feature 1013).
+    if (response.status === 404) notFound();
+
     if (!response.ok) {
       throw new Error('Listing not found');
     }
@@ -117,6 +121,8 @@ export async function generateMetadata({ params }) {
     return {
       title: { absolute: title },
       description,
+      // Expired or switched-off: page stays (owner can renew) but is hidden from search.
+      ...detailPageRobots(isListingIndexable(listing)),
       alternates: { canonical: url },
       openGraph: {
         title, // No branding for WhatsApp
@@ -142,6 +148,7 @@ export async function generateMetadata({ params }) {
       },
     };
   } catch (error) {
+    unstable_rethrow(error); // let notFound() through
     console.error('Error fetching listing for meta tags:', error);
     return {
       title: 'Listing - Desify',
@@ -150,36 +157,26 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Simple not-found view (server-rendered, no redirect)
-function ListingNotFound() {
-  return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-      <div className="text-center">
-        <p className="text-slate-700">Listing not found</p>
-        <a href="/listings" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
-          Browse listings
-        </a>
-      </div>
-    </div>
-  );
-}
-
+// The "Listing not found" view lives in ./not-found.jsx: notFound() renders it with a real 404.
 export default async function ListingSlugPage({ params }) {
   const { slug } = await params;
   const listingId = extractIdFromSlug(slug);
 
   if (!listingId || !API_BASE_URL) {
-    return <ListingNotFound />;
+    notFound();
   }
 
   // Fetch the listing on the server so its content is in the HTML (SEO).
   // Same public endpoint + revalidate as generateMetadata, so the two fetches dedupe.
   let advert = null;
+  let gone = false;
   try {
     const response = await fetch(`${API_BASE_URL}/adverts/byid/${listingId}`, {
       next: { revalidate: 3600, tags: [`listing-${listingId}`] },
     });
-    if (response.ok) {
+    if (response.status === 404) {
+      gone = true;
+    } else if (response.ok) {
       const json = await response.json();
       advert = json?.data?.advert || json?.advert || null;
     }
@@ -187,9 +184,11 @@ export default async function ListingSlugPage({ params }) {
     console.error('Error fetching listing:', error);
   }
 
-  if (!advert) {
-    return <ListingNotFound />;
-  }
+  // Deleted (backend 404): real 404 status with the not-found view, so Google drops the page.
+  if (gone) notFound();
+  // Backend down or unreadable answer: an error (5xx), never a 404 - Google retries later
+  // instead of dropping a live listing.
+  if (!advert) throw new Error(`Listing ${listingId} could not be loaded`);
 
   // Structured data (LocalBusiness for services/businesses, Product for items)
   const jsonLd = buildListingJsonLd(advert, `${META_DEFAULTS.siteUrl}/listings/${slug}`);

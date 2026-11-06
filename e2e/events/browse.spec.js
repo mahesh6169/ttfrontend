@@ -224,10 +224,39 @@ test.describe('past events', () => {
   });
 });
 
+// Feature 1013: a finished event keeps its page (Google can still show it) with a dark "Ended" pill
+// on the photo and upcoming events in the right column; an organiser-cancelled event gets a red
+// "Cancelled" pill and is marked cancelled for Google. An upcoming event has neither.
+test('a finished event shows an Ended pill and upcoming events; a cancelled one shows Cancelled and tells Google', async ({ page }) => {
+  const seed = readSeed();
+
+  await page.goto(`/events/${seed.pastUnfeaturedEventId}`);
+  await expect(page.getByTestId('event-status-badge')).toHaveText('Ended', { timeout: 20_000 });
+  const side = page.getByTestId('upcoming-events'); // desktop right column
+  await expect(side).toBeVisible();
+  await expect(side.getByRole('heading', { name: 'Upcoming events' })).toBeVisible();
+  await expect(side.getByRole('link', { name: 'See all upcoming events' })).toHaveAttribute('href', '/events');
+  // At least one upcoming event is linked besides "See all".
+  expect(await side.getByRole('link').count()).toBeGreaterThan(1);
+
+  await page.goto(`/events/${seed.pastEndedEventId}`); // organiser soft-deleted = cancelled
+  await expect(page.getByTestId('event-status-badge')).toHaveText('Cancelled', { timeout: 20_000 });
+  const jsonLd = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(jsonLd.join(' ')).toContain('https://schema.org/EventCancelled');
+
+  // An upcoming event has no pill and no upcoming list.
+  await page.goto(`/events/${seed.freeEventId}`);
+  await expect(page.getByRole('heading', { name: seed.freeEventTitle })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('event-status-badge')).toHaveCount(0);
+  await expect(page.getByTestId('upcoming-events')).toHaveCount(0);
+});
+
 test('the public page of a blocked event reads unavailable, with no Register or Purchase action', async ({ page }) => {
   const seed = readSeed();
   // The canonical /events/{slug} route (extractIdFromSlug also accepts a bare id).
-  await page.goto(`/events/${seed.blockedDetailEventId}`);
+  // A blocked event reads as not found, with a real 404 status (feature 1013).
+  const res = await page.goto(`/events/${seed.blockedDetailEventId}`);
+  expect(res.status()).toBe(404);
   await expect(page.getByText('Event not found')).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole('button', { name: 'Register for Event' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Purchase Tickets' })).toHaveCount(0);

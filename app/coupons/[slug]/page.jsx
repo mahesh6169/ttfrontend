@@ -1,4 +1,5 @@
 import { META_DEFAULTS } from '@/utils/slugUtils';
+import { notFound, unstable_rethrow } from 'next/navigation';
 import { format } from 'date-fns';
 import { formatValidDays } from '@/utils/couponSchedule';
 import CampaignDetailClient from './CampaignDetailClient';
@@ -36,6 +37,9 @@ export async function generateMetadata({ params }) {
     
     clearTimeout(timeoutId);
     
+    // Deleted or expired coupon: the page answers a real 404 (feature 1013).
+    if (response.status === 404) notFound();
+
     if (!response.ok) {
       throw new Error('Campaign not found');
     }
@@ -100,6 +104,7 @@ export async function generateMetadata({ params }) {
       },
     };
   } catch (error) {
+    unstable_rethrow(error); // let notFound() through
     console.error('Error fetching campaign for meta tags:', error);
     return {
       title: 'Discount Campaign - Desify',
@@ -108,6 +113,25 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default function CampaignDetailPage({ params }) {
+// The body is still drawn in the browser (CampaignDetailClient), but the server first asks the
+// backend whether the coupon exists: deleted or expired -> real 404 with ./not-found.jsx, so
+// Google drops the page (feature 1013). Same request + cache tag as generateMetadata (deduped).
+// Any other failure falls through to the client, which shows its own message as before.
+export default async function CampaignDetailPage({ params }) {
+  const { slug } = await params;
+  if (!slug || !API_BASE_URL) notFound();
+
+  let gone = false;
+  try {
+    const response = await fetch(`${API_BASE_URL}/coupons/campaigns/slug/${slug}`, {
+      next: { revalidate: 3600, tags: [`campaign-${slug}`] },
+      headers: { 'x-api-key': process.env.NEXT_PUBLIC_FRONTEND_API_KEY || '' },
+    });
+    gone = response.status === 404;
+  } catch (error) {
+    console.error('Error checking campaign:', error);
+  }
+  if (gone) notFound();
+
   return <CampaignDetailClient params={params} />;
 }

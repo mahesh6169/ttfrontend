@@ -4,8 +4,11 @@
 // Both sides must use the same rule so the CTA state and the backend gate can never drift.
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
 
-// Returns true when ticket sales are closed for `event` (past 11:59:59pm on the event day).
+// Returns true when ticket sales are closed for `event`: the organiser cancelled it (feature 1013 -
+// the backend already refuses RSVPs/tickets for a deletedByOrganiser event), or it is past
+// 11:59:59pm on the event day.
 export const isSalesClosed = (event, now = new Date()) => {
+  if (event?.deletedByOrganiser) return true;
   if (!event?.dateTime || !event?.timeZone) return false;
   const tz = event.timeZone;
   const localStart = utcToZonedTime(new Date(event.dateTime), tz);

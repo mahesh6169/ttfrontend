@@ -68,7 +68,10 @@ export function buildEventJsonLd(event, url) {
     '@type': 'Event',
     name: event.title,
     url,
-    eventStatus: 'https://schema.org/EventScheduled',
+    // The organiser's delete is a soft cancel: tell Google it is cancelled (feature 1013).
+    eventStatus: event.deletedByOrganiser
+      ? 'https://schema.org/EventCancelled'
+      : 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     location: buildPlace(event),
     offers: buildOffers(event, url),

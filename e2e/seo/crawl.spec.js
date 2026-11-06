@@ -89,6 +89,40 @@ test('slug detail pages in every vertical carry no extra noindex beyond the home
   }
 });
 
+// Feature 1013: a deleted item must answer a real 404 so Google drops the page by itself (before,
+// the "not found" message came with status 200). A live item still answers 200.
+test('a deleted or missing item answers a real 404 in every vertical, while live items answer 200', async ({ request }) => {
+  const seed = readSeed();
+  const MISSING = 'aaaaaaaaaaaaaaaaaaaaaaaa'; // a well-formed id that does not exist
+  const pairs = [
+    [`/listings/${createSlugUrl(seed.seoListingTitle, seed.seoListingId)}`, `/listings/gone-listing-${MISSING}`],
+    [`/events/${createSlugUrl(seed.freeEventTitle, seed.freeEventId)}`, `/events/gone-event-${MISSING}`],
+    [`/threads/${createSlugUrl(seed.threadRichTitle, seed.threadRichId)}`, `/threads/gone-topic-${MISSING}`],
+    [`/deals/${createSlugUrl(seed.seoDealTitle, seed.seoDealId)}`, `/deals/gone-deal-${MISSING}`],
+    [`/coupons/${seed.couponCampaignSlug}`, '/coupons/no-such-coupon-campaign'],
+  ];
+  for (const [live, gone] of pairs) {
+    expect((await request.get(live)).status(), `${live} should answer 200`).toBe(200);
+    expect((await request.get(gone)).status(), `${gone} should answer 404`).toBe(404);
+  }
+  // A link with no id in it at all is a 404 too.
+  expect((await request.get('/listings/not-an-id')).status()).toBe(404);
+});
+
+// Feature 1013: Google flags an empty child sitemap as an error, so the index only names lists
+// that have at least one page.
+test('the sitemap index only names child sitemaps that list at least one page', async ({ request }) => {
+  const indexXml = await (await request.get('/sitemap.xml')).text();
+  const locs = [...indexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  expect(locs.length).toBeGreaterThan(0);
+  for (const loc of locs) {
+    const path = new URL(loc).pathname;
+    const res = await request.get(path);
+    expect(res.status(), `${path} should load`).toBe(200);
+    expect(await res.text(), `${path} is named in the index, so it must list a page`).toContain('<url>');
+  }
+});
+
 test('the server HTML has no icon tooltip title= strings; wishlist and share buttons keep their aria-labels', async ({ request }) => {
   // Homepage: no header Signin/Register/nav-link title= strings.
   const homeRes = await request.get('/');
