@@ -1,14 +1,18 @@
-// Shown with a real 404 status when the listing does not exist (deleted, or a bad link).
-// Same look as the old inline "Listing not found" view (feature 1013).
+import BackButton from '@/components/BackButton';
+import EmptyState from '@/components/layout/EmptyState';
+
+// Shown with a real 404 status when the listing does not exist (deleted, or a bad link) - feature 1013.
+// Same look as the coupon not-found page (owner choice in UAT).
 export default function ListingNotFound() {
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-9rem)]">
-      <div className="text-center">
-        <p className="text-slate-700">Listing not found</p>
-        <a href="/listings" className="text-sm text-teal-700 hover:text-teal-800 mt-2 inline-block">
-          Browse listings
-        </a>
-      </div>
+    <div className="flex flex-col gap-2">
+      <BackButton className="self-start" />
+      <EmptyState
+        title="Listing not found"
+        description="This listing may have been removed or the link is incorrect."
+        actionLabel="Browse listings"
+        actionHref="/listings"
+      />
     </div>
   );
 }
