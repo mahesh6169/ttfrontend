@@ -7,7 +7,9 @@ import { NextResponse } from 'next/server';
 // REVALIDATION_SECRET is server-only (never NEXT_PUBLIC_) and must match the backend's.
 // platform-settings = the admin's site switches read by app/layout.jsx (Platform Settings page).
 // threads-list = the forum landing's first page and the home page's latest threads (feature 1012).
-const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$|^platform-settings$|^threads-list$/;
+// events-list / listings-list / deals-list / coupons-list = the section landings' first page; events and
+// listings also the home page strips (feature 1014).
+const TAG_PATTERN = /^(event|listing|thread|deal)-[a-f0-9]{24}$|^campaign-[a-z0-9-]{1,120}$|^platform-settings$|^(threads|events|listings|deals|coupons)-list$/;
 
 function hasValidSecret(request) {
   const expected = process.env.REVALIDATION_SECRET;

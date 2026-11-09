@@ -22,13 +22,14 @@ export const metadata = {
 async function fetchHomeData() {
   try {
     const [listingsRes, eventsRes, threadsRes] = await Promise.all([
+      // Tags: the backend clears these the moment an item changes (feature 1014)
       fetch(`${API_BASE_URL}/home/listings`, {
         headers: { 'x-api-key': API_KEY },
-        next: { revalidate: 300 },
+        next: { revalidate: 300, tags: ['listings-list'] },
       }),
       fetch(`${API_BASE_URL}/home/events`, {
         headers: { 'x-api-key': API_KEY },
-        next: { revalidate: 300 },
+        next: { revalidate: 300, tags: ['events-list'] },
       }),
       fetch(`${API_BASE_URL}/home/threads`, {
         headers: { 'x-api-key': API_KEY },

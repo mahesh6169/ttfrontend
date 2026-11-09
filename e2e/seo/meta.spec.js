@@ -186,12 +186,13 @@ test('the share-preview refresh address turns away calls without the right secre
 test('the share-preview refresh address accepts the backend\'s secret for known page tags only', async ({ request }) => {
   const headers = { 'x-revalidation-secret': REVALIDATION_SECRET };
   for (const tag of [EVENT_TAG, 'listing-0123456789abcdef01234567', 'thread-0123456789abcdef01234567',
-    'deal-0123456789abcdef01234567', 'campaign-test-store-20-off']) {
+    'deal-0123456789abcdef01234567', 'campaign-test-store-20-off',
+    'events-list', 'listings-list', 'threads-list', 'deals-list', 'coupons-list']) {
     const res = await request.post(`${SITE}/api/revalidate`, { data: { tag }, headers });
     expect(res.status(), tag).toBe(200);
   }
 
-  for (const tag of ['homepage', 'event-not-an-id', '']) {
+  for (const tag of ['homepage', 'event-not-an-id', 'users-list', '']) {
     const res = await request.post(`${SITE}/api/revalidate`, { data: { tag }, headers });
     expect(res.status(), tag || '(empty)').toBe(400);
   }

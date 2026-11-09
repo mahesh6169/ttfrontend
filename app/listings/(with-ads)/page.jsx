@@ -81,7 +81,8 @@ async function fetchDefaultListingsPage() {
   try {
     const res = await fetch(`${API_BASE_URL}/adverts/search?${query.toString()}`, {
       headers: { 'x-api-key': API_KEY },
-      next: { revalidate: 300 },
+      // List tag: cleared by the backend the moment an item changes (feature 1014)
+      next: { revalidate: 300, tags: ['listings-list'] },
     });
     if (!res.ok) return null;
     const body = await res.json();
