@@ -82,7 +82,8 @@ async function fetchDefaultEventsPage() {
   try {
     const res = await fetch(`${API_BASE_URL}/events/search?${query.toString()}`, {
       headers: { 'x-api-key': API_KEY },
-      next: { revalidate: 300 },
+      // List tag: cleared by the backend the moment an item changes (feature 1014)
+      next: { revalidate: 300, tags: ['events-list'] },
     });
     if (!res.ok) return null;
     return await res.json();

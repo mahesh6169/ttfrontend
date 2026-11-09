@@ -75,7 +75,8 @@ async function fetchDefaultDealsPage() {
   try {
     const res = await fetch(`${API_BASE_URL}/dailydeals?${query.toString()}`, {
       headers: { 'x-api-key': API_KEY },
-      next: { revalidate: 300 },
+      // List tag: cleared by the backend the moment an item changes (feature 1014)
+      next: { revalidate: 300, tags: ['deals-list'] },
     });
     if (!res.ok) return null;
     return await res.json();

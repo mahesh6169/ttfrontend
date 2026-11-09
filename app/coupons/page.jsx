@@ -72,7 +72,8 @@ function isDefaultCouponsView(sp = {}) {
 async function fetchDefaultCouponsPage() {
   if (!API_BASE_URL) return null;
   const headers = { 'x-api-key': API_KEY };
-  const opts = { headers, next: { revalidate: 300 } };
+  // coupons-list: cleared by the backend the moment a coupon or store changes (feature 1014)
+  const opts = { headers, next: { revalidate: 300, tags: ['coupons-list'] } };
   try {
     const storesRes = await fetch(`${API_BASE_URL}/coupons/stores?page=1&limit=20`, opts);
     if (!storesRes.ok) return null;

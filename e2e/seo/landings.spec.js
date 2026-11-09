@@ -256,3 +256,67 @@ test('homepage: one platform heading, locked description and title, unlinked foo
   expect(html).toMatch(/\/listings\/[^"]*-[0-9a-f]{24}/);
   expect(html).toMatch(/\/events\/[^"]*-[0-9a-f]{24}/);
 });
+
+// --- Fresh landings (feature 1014) -----------------------------------------------------------
+// /events and the home page are cached for 5 minutes; the backend clears that cache (tag
+// events-list via /api/revalidate) the moment an event is created or deleted, so the served HTML
+// shows the change within seconds instead of up to 5 minutes later. The event starts in an hour,
+// so it sorts first on both (soonest first).
+test.describe('fresh landings', () => {
+  test.use({ storageState: 'e2e/.auth/organiser.json' });
+
+  const API = 'http://localhost:5100/api';
+  const KEY = { 'x-api-key': 'test-api-key' };
+
+  async function expectHtml(request, path, check) {
+    await expect(async () => {
+      const res = await request.get(path);
+      expect(res.status()).toBe(200);
+      check(await res.text());
+    }).toPass({ timeout: 60_000, intervals: [1_000, 2_000, 5_000] });
+  }
+
+  test('a new event shows on /events and the home page straight away, and drops off when deleted', async ({ request }) => {
+    const title = `Fresh Landing Check ${Date.now()}`;
+
+    // Warm the cached pages first, so a stale copy is what we would see without the refresh.
+    for (const path of ['/events', '/']) {
+      const warm = await request.get(path);
+      expect(warm.status()).toBe(200);
+      expect(await warm.text()).not.toContain(title);
+    }
+
+    const created = await request.post(`${API}/events/add-free-event`, {
+      headers: KEY,
+      multipart: {
+        title,
+        dateTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        venue: 'Test Hall',
+        description: 'Checks that new events show on the landing straight away.',
+        category: 'Community',
+        address: JSON.stringify({
+          formattedAddress: '1 Test St, Sydney NSW 2000', suburb: 'Sydney', state: 'NSW',
+          location: { type: 'Point', coordinates: [151.2093, -33.8688] },
+        }),
+        organizer: JSON.stringify({ name: 'Test Organiser', contact: '0412345678' }),
+        isPaid: 'false',
+        eventIntent: 'host',
+        capacity: '50',
+        maxAttendeesPerRegistration: '2',
+      },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    const id = (await created.json()).event._id;
+
+    try {
+      await expectHtml(request, '/events', (html) => expect(html).toContain(title));
+      await expectHtml(request, '/', (html) => expect(html).toContain(title));
+    } finally {
+      const del = await request.delete(`${API}/events/${id}`, { headers: KEY });
+      expect(del.status()).toBe(200);
+    }
+
+    await expectHtml(request, '/events', (html) => expect(html).not.toContain(title));
+    await expectHtml(request, '/', (html) => expect(html).not.toContain(title));
+  });
+});
