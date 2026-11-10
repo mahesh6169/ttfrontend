@@ -36,6 +36,11 @@ import RefundPolicyDisplay from '@/components/events/refunds/RefundPolicyDisplay
 import SeatSocketListenerNoRedux from '@/components/events/seats/SeatSocketListenerNoRedux';
 import ReservationTimer from '@/components/events/ReservationTimer';
 
+// Order finishing after the card is approved (feature 1015).
+const CONFIRM_FAST_RETRY_MS = 3000;
+const CONFIRM_SLOW_RETRY_MS = 10000;
+const CONFIRM_NOTE_AFTER_MS = 60000;
+
 const CheckoutPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -94,6 +99,14 @@ const CheckoutPage = () => {
   // reset only if the confirm fails (so a real retry is allowed). Prevents a duplicate
   // confirm-payment request from a refresh / retry / re-render (backend is idempotent too).
   const hasConfirmedRef = useRef(false);
+  // Order-finishing state after the card is approved (feature 1015): null, 'confirming' (still
+  // asking the server, cover shown) or 'waiting' (no answer for a minute: note shown, still asking).
+  const [confirmStage, setConfirmStage] = useState(null);
+  const unmountedRef = useRef(false);
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => { unmountedRef.current = true; };
+  }, []);
 
   // Fetch reservation data
   const fetchReservation = useCallback(async () => {
@@ -586,112 +599,117 @@ const CheckoutPage = () => {
            (refundPolicyInfo && !refundPolicyAccepted);
   };
 
+  // Finish the order after the card is approved (feature 1015). The page asks the server for the
+  // order; if it cannot reach the server it keeps asking quietly (one request at a time) instead of
+  // showing an error - the order is also finished by Stripe's message, and asking again is safe
+  // (the server never makes a second order). After a minute it shows a note and keeps checking
+  // every 10 seconds, flipping to the result by itself once the connection is back.
+  const finishOrderSuccess = (data) => {
+    if (data.invoiceNumber) {
+      setPurchaseInvoiceNumber(data.invoiceNumber);
+    }
+    try {
+      sessionStorage.removeItem(`reservation_${params.eventId}`);
+      sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
+      sessionStorage.removeItem(`formResponses_${params.eventId}`);
+      setReservation(null);
+      if (reservation?._id) {
+        axios.delete(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
+          { withCredentials: true }
+        ).catch(err => {
+          // Ignore errors - the server closes the hold itself
+          if (err.response?.status !== 404) {
+            console.log('Reservation cleanup note:', err.message);
+          }
+        });
+      }
+    } catch (cleanupError) {
+      console.error('Cleanup error (non-blocking):', cleanupError);
+    }
+    setConfirmStage(null);
+    setCurrentStep('complete');
+    setIsPaymentSuccessful(true);
+    setPaymentStatus({ ...paymentStatus, status: 'succeeded' });
+  };
+
   const handlePaymentSuccess = async (paymentIntent) => {
-    // Guard: only confirm once per successful charge. If this fires again (refresh, retry,
-    // re-render) bail immediately so we never send a duplicate confirm-payment request.
+    // Guard: only confirm once per approved payment. If this fires again (refresh, retry,
+    // re-render) bail immediately so we never run two confirm loops.
     if (hasConfirmedRef.current) {
       console.log('Confirm already in progress/done for this payment — ignoring duplicate fire');
       return;
     }
     hasConfirmedRef.current = true;
-
-    console.log('Payment successful, confirming with backend:', paymentIntent.id);
     setIsProcessing(true);
-    
-    try {
-      // Convert selectedTickets array to tickets object that backend expects
-      const ticketsObject = selectedTickets.reduce((acc, ticket) => {
-        acc[ticket.ticketTypeId] = ticket.quantity;
-        return acc;
-      }, {});
 
-      console.log('Sending payment confirmation with:', {
-        paymentIntentId: paymentIntent.id,
-        tickets: ticketsObject,
-        buyerInfo: buyerInfo
-      });
+    const ticketsObject = selectedTickets.reduce((acc, ticket) => {
+      acc[ticket.ticketTypeId] = ticket.quantity;
+      return acc;
+    }, {});
+    const startedAt = Date.now();
 
-      // Call backend to confirm payment and create tickets
-      const confirmResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/confirm-payment`,
-        {
-          paymentIntentId: paymentIntent.id,
-          tickets: ticketsObject,
-          buyerInfo: buyerInfo,
-          formResponses: formResponses || {}
-        },
-        { withCredentials: true }
-      );
-      
-      if (confirmResponse.data.success) {
-        console.log('✅ Payment confirmed via backend');
-        
-        // Store the invoice number for ticket download
-        if (confirmResponse.data.invoiceNumber) {
-          setPurchaseInvoiceNumber(confirmResponse.data.invoiceNumber);
+    for (;;) {
+      try {
+        const confirmResponse = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/paid/confirm-payment`,
+          {
+            paymentIntentId: paymentIntent.id,
+            tickets: ticketsObject,
+            buyerInfo: buyerInfo,
+            formResponses: formResponses || {}
+          },
+          { withCredentials: true, timeout: 20000 }
+        );
+        if (unmountedRef.current) return;
+        if (confirmResponse.data.success) {
+          finishOrderSuccess(confirmResponse.data);
+          setIsProcessing(false);
+          return;
         }
-        
-        // Clean up reservation data (non-blocking for better UX)
-        try {
-          // Clear all reservation-related session storage immediately
+        throw Object.assign(new Error(confirmResponse.data.message || 'Payment confirmation failed'), { handled: true });
+      } catch (error) {
+        if (unmountedRef.current) return;
+
+        // The tickets could not be made (sold out, seat taken, ...) and the hold was released:
+        // the buyer was not charged. Show that instead of the card form; nothing to retry.
+        if (error.response?.data?.errorCode === 'NOT_CHARGED') {
           sessionStorage.removeItem(`reservation_${params.eventId}`);
           sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
           sessionStorage.removeItem(`formResponses_${params.eventId}`);
-          
-          // Clear reservation state
-          setReservation(null);
-          
-          // Delete reservation from backend in background (non-blocking)
-          if (reservation?._id) {
-            axios.delete(
-              `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${params.eventId}/reservation/${reservation._id}`,
-              { withCredentials: true }
-            ).catch(err => {
-              // Ignore errors - backend will auto-cleanup
-              if (err.response?.status !== 404) {
-                console.log('Reservation cleanup note:', err.message);
-              }
-            });
-          }
-          
-          console.log('✅ Cleanup completed');
-        } catch (cleanupError) {
-          console.error('Cleanup error (non-blocking):', cleanupError);
-          // Don't block success flow for cleanup errors
+          setConfirmStage(null);
+          setNotChargedMessage(error.response.data.message);
+          setIsPaymentSuccessful(false);
+          setIsProcessing(false);
+          return;
         }
-        
-        // NOW show success state after cleanup is done
-        setCurrentStep('complete');
-        setIsPaymentSuccessful(true);
-        setPaymentStatus({ ...paymentStatus, status: 'succeeded' });
-      } else {
-        throw new Error(confirmResponse.data.message || 'Payment confirmation failed');
-      }
-    } catch (error) {
-      console.error('Payment confirmation failed:', error);
 
-      // The tickets could not be made (sold out, seat taken, ...) and the hold was released:
-      // the buyer was not charged. Show that instead of the card form; nothing to retry.
-      if (error.response?.data?.errorCode === 'NOT_CHARGED') {
-        sessionStorage.removeItem(`reservation_${params.eventId}`);
-        sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
-        sessionStorage.removeItem(`formResponses_${params.eventId}`);
-        setNotChargedMessage(error.response.data.message);
+        // No answer from the server (no signal, server busy or restarting): keep asking quietly.
+        const connectionProblem = !error.handled && (!error.response || error.response.status >= 500);
+        if (connectionProblem) {
+          const waited = Date.now() - startedAt;
+          if (waited >= CONFIRM_NOTE_AFTER_MS) {
+            setIsProcessing(false);
+            setConfirmStage('waiting');
+          } else {
+            setConfirmStage('confirming');
+          }
+          await new Promise((resolve) => setTimeout(resolve, waited >= CONFIRM_NOTE_AFTER_MS ? CONFIRM_SLOW_RETRY_MS : CONFIRM_FAST_RETRY_MS));
+          if (unmountedRef.current) return;
+          continue;
+        }
+
+        // A real answer that is an error: show it as before. Un-latch so the buyer can retry;
+        // confirm-payment is safe to repeat.
+        console.error('Payment confirmation failed:', error);
+        hasConfirmedRef.current = false;
+        setConfirmStage(null);
+        const errorMessage = error.response?.data?.message || error.message || 'Payment successful but failed to create tickets. Please contact support.';
+        setErrors({ payment: errorMessage });
         setIsPaymentSuccessful(false);
+        setIsProcessing(false);
         return;
       }
-
-      // Un-latch so the buyer can retry a genuinely failed confirm. The money is held or
-      // taken and the backend confirm-payment is idempotent, so re-sending is safe.
-      hasConfirmedRef.current = false;
-
-      // Check if this is a capacity conflict error
-      let errorMessage = error.response?.data?.message || error.message || 'Payment successful but failed to create tickets. Please contact support.';
-      
-      setErrors({ payment: errorMessage });
-      setIsPaymentSuccessful(false);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -1330,10 +1348,10 @@ const CheckoutPage = () => {
                         <div className="text-center">
                           <FaSpinner className="animate-spin mx-auto text-3xl sm:text-4xl text-teal-600 mb-3" />
                           <p className="text-sm sm:text-base font-semibold text-slate-800">
-                            Processing Payment...
+                            {confirmStage === 'confirming' ? 'Confirming your order...' : 'Processing Payment...'}
                           </p>
                           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                            Please do not close this page
+                            {confirmStage === 'confirming' ? 'This can take a moment. Please keep this page open.' : 'Please do not close this page'}
                           </p>
                         </div>
                       </div>
@@ -1347,7 +1365,7 @@ const CheckoutPage = () => {
                       <div className="text-center py-6 sm:py-8" data-testid="not-charged">
                         <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl text-amber-500 mb-3 sm:mb-4" />
                         <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
-                          You have not been charged
+                          Sorry, your order didn&apos;t go through
                         </h3>
                         <p className="text-slate-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
                           {notChargedMessage}
@@ -1357,6 +1375,19 @@ const CheckoutPage = () => {
                           className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
                         >
                           Back to event
+                        </button>
+                      </div>
+                    ) : confirmStage === 'waiting' ? (
+                      // No answer from the server for a minute after the card was approved. The page
+                      // keeps checking and flips to the result by itself; the card form stays hidden.
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 text-sm text-amber-800 space-y-2" data-testid="confirm-waiting">
+                        <p className="font-semibold">We&apos;re having trouble reaching our server. Please check your internet connection.</p>
+                        <p>We&apos;ll keep trying. You&apos;ll only be charged if your tickets are issued, and we&apos;ll email you once your order is confirmed.</p>
+                        <button
+                          onClick={() => router.push('/users/profile/mytickets')}
+                          className="px-4 py-2 bg-amber-700 text-white rounded-lg hover:bg-amber-800 transition-colors font-medium text-sm"
+                        >
+                          Go to My Tickets
                         </button>
                       </div>
                     ) : paymentStatus.clientSecret ? (
