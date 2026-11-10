@@ -102,6 +102,9 @@ const CheckoutPage = () => {
   // Order-finishing state after the card is approved (feature 1015): null, 'confirming' (still
   // asking the server, cover shown) or 'waiting' (no answer for a minute: note shown, still asking).
   const [confirmStage, setConfirmStage] = useState(null);
+  // True from the moment the card is approved: the hold countdown no longer applies (its expiry
+  // would send the buyer away and cancel the hold while the order is being confirmed).
+  const [paymentApproved, setPaymentApproved] = useState(false);
   const unmountedRef = useRef(false);
   useEffect(() => {
     unmountedRef.current = false;
@@ -641,6 +644,7 @@ const CheckoutPage = () => {
       return;
     }
     hasConfirmedRef.current = true;
+    setPaymentApproved(true);
     setIsProcessing(true);
 
     const ticketsObject = selectedTickets.reduce((acc, ticket) => {
@@ -703,6 +707,7 @@ const CheckoutPage = () => {
         // confirm-payment is safe to repeat.
         console.error('Payment confirmation failed:', error);
         hasConfirmedRef.current = false;
+        setPaymentApproved(false);
         setConfirmStage(null);
         const errorMessage = error.response?.data?.message || error.message || 'Payment successful but failed to create tickets. Please contact support.';
         setErrors({ payment: errorMessage });
@@ -1020,8 +1025,8 @@ const CheckoutPage = () => {
               </div>
             </div>
 
-          {/* Reservation timer - urgency badge, centred. */}
-          {reservation && (
+          {/* Reservation timer - urgency badge, centred. Hidden once the card is approved. */}
+          {reservation && !paymentApproved && (
             <div className="flex justify-center mb-4">
               <ReservationTimer
                 expiresAt={reservation.expiresAt}
