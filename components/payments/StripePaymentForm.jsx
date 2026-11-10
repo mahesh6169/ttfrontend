@@ -91,8 +91,10 @@ const PaymentForm = ({
         return;
       }
 
-      if (paymentIntent.status === 'succeeded') {
-        console.log('✅ Stripe payment succeeded:', paymentIntent.id);
+      // 'requires_capture' = the money is held (feature 1015); the server takes it once the
+      // tickets are made. 'succeeded' = already charged (older checkout).
+      if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture') {
+        console.log('✅ Stripe payment approved:', paymentIntent.id, paymentIntent.status);
         onSuccess(paymentIntent);
       } else {
         const statusMessage = `Payment status: ${paymentIntent.status}. Please try again.`;

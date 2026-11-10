@@ -56,6 +56,9 @@ const CheckoutPage = () => {
     agreeToTerms: false
   });
   const [formResponses, setFormResponses] = useState({});
+  // Set when the tickets could not be made while paying: the payment hold was released, so the
+  // buyer was NOT charged (feature 1015). Holds the message to show instead of the card form.
+  const [notChargedMessage, setNotChargedMessage] = useState(null);
   const [refundPolicyAccepted, setRefundPolicyAccepted] = useState(false);
   const [refundPolicyInfo, setRefundPolicyInfo] = useState(null);
 
@@ -492,7 +495,11 @@ const CheckoutPage = () => {
             return acc;
           }, {}),
           // Discount (S3/S4). Backend re-validates and is authoritative for the charge.
-          ...(appliedDiscount?.code ? { discountCode: appliedDiscount.code } : {})
+          ...(appliedDiscount?.code ? { discountCode: appliedDiscount.code } : {}),
+          // Feature 1015: the card is only held at Pay; the money is taken once the tickets exist.
+          // The answers go with the order now, so the tickets can be made even if this page closes.
+          captureMode: 'hold',
+          formResponses: formResponses || {}
         },
         { withCredentials: true }
       );
@@ -663,8 +670,19 @@ const CheckoutPage = () => {
     } catch (error) {
       console.error('Payment confirmation failed:', error);
 
-      // Un-latch so the buyer can retry a genuinely failed confirm. The card is already
-      // charged and the backend confirm-payment is idempotent, so re-sending is safe.
+      // The tickets could not be made (sold out, seat taken, ...) and the hold was released:
+      // the buyer was not charged. Show that instead of the card form; nothing to retry.
+      if (error.response?.data?.errorCode === 'NOT_CHARGED') {
+        sessionStorage.removeItem(`reservation_${params.eventId}`);
+        sessionStorage.removeItem(`selectedTickets_${params.eventId}`);
+        sessionStorage.removeItem(`formResponses_${params.eventId}`);
+        setNotChargedMessage(error.response.data.message);
+        setIsPaymentSuccessful(false);
+        return;
+      }
+
+      // Un-latch so the buyer can retry a genuinely failed confirm. The money is held or
+      // taken and the backend confirm-payment is idempotent, so re-sending is safe.
       hasConfirmedRef.current = false;
 
       // Check if this is a capacity conflict error
@@ -1325,7 +1343,23 @@ const CheckoutPage = () => {
                       Payment Details
                     </h2>
                     
-                    {paymentStatus.clientSecret ? (
+                    {notChargedMessage ? (
+                      <div className="text-center py-6 sm:py-8" data-testid="not-charged">
+                        <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl text-amber-500 mb-3 sm:mb-4" />
+                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
+                          You have not been charged
+                        </h3>
+                        <p className="text-slate-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
+                          {notChargedMessage}
+                        </p>
+                        <button
+                          onClick={() => router.push(`/events/views/${params.eventId}`)}
+                          className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
+                        >
+                          Back to event
+                        </button>
+                      </div>
+                    ) : paymentStatus.clientSecret ? (
                       <>
                         {purchaseError && (
                           <div className="bg-red-50 border border-red-200 rounded-md p-2 sm:p-3 mb-3 sm:mb-4">
