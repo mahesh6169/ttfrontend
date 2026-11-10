@@ -880,17 +880,18 @@ const CheckoutPage = () => {
     return (
       <div>
         <div className="max-w-lg lg:max-w-2xl mx-auto">
+          {/* Type scale (Material Design): Title Large -> 18/20px, Body Large 16px, Label Large 14px. */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center" data-testid="not-charged">
-            <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-amber-500 mb-3 sm:mb-4 lg:mb-6" />
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-2 sm:mb-3 lg:mb-4">
+            <FaExclamationTriangle className="mx-auto text-4xl text-amber-500 mb-3 sm:mb-4" />
+            <h1 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
               Sorry, your order didn&apos;t go through
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-slate-600 mb-4 sm:mb-6">
+            <p className="text-base text-slate-600 mb-4 sm:mb-6">
               {notChargedMessage}
             </p>
             <button
               onClick={() => router.push(`/events/views/${params.eventId}`)}
-              className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
+              className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm"
             >
               Back to event
             </button>
@@ -1395,7 +1396,7 @@ const CheckoutPage = () => {
                     {confirmStage === 'waiting' ? (
                       // No answer from the server for a minute after the card was approved. The page
                       // keeps checking and flips to the result by itself; the card form stays hidden.
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 text-sm text-amber-800 space-y-2" data-testid="confirm-waiting">
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 text-base text-amber-800 space-y-2" data-testid="confirm-waiting">
                         <p className="font-semibold">We&apos;re having trouble reaching our server. Please check your internet connection.</p>
                         <p>We&apos;ll keep trying. You&apos;ll only be charged if your tickets are issued, and we&apos;ll email you once your order is confirmed.</p>
                         <button
