@@ -104,6 +104,72 @@ test('a member buys a paid ticket end to end with the 4242 test card and the sal
   expect(flags.hasSold).toBe(true);
 });
 
+// Feature 1015: if the tickets can't be made while paying (here: the server answers that the last
+// tickets went), the payment hold is released and the buyer sees they were NOT charged - no card
+// form to retry. The server side of this is covered by the backend tests (tests/tickets/purchase).
+test('when the tickets go while paying, the buyer is told the order did not go through and they will not be charged', async ({ page }) => {
+  const seed = readSeed();
+  await page.route('**/paid/confirm-payment', (route) => route.fulfill({
+    status: 409,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      success: false,
+      errorCode: 'NOT_CHARGED',
+      reason: 'SOLD_OUT',
+      notCharged: true,
+      message: 'The last tickets sold out while you were paying. You will not be charged.',
+    }),
+  }));
+  await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
+  await fillBuyer(page);
+  await page.getByRole('button', { name: /Continue to Payment/ }).click();
+
+  const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
+  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
+  await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
+  await stripe.getByPlaceholder('CVC').fill('123');
+  await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+  await page.getByRole('button', { name: /Complete Payment/ }).click();
+
+  const panel = page.getByTestId('not-charged');
+  await expect(panel).toBeVisible({ timeout: 45_000 });
+  await expect(panel.getByText("Sorry, your order didn't go through")).toBeVisible();
+  await expect(panel.getByText('The last tickets sold out while you were paying. You will not be charged.')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Complete Payment/ })).toHaveCount(0);
+  await expect(page.getByText('Payment Successful!')).toHaveCount(0);
+});
+
+// Feature 1015: the page cannot reach the server right after the card is approved. It shows
+// "Confirming your order..." instead of an error, keeps asking quietly, and shows the normal
+// success screen once the server answers. (Here the first two answers are dropped connections.)
+test('a dropped connection after paying shows Confirming your order, then the normal success screen', async ({ page }) => {
+  const seed = readSeed();
+  let dropped = 0;
+  await page.route('**/paid/confirm-payment', async (route) => {
+    if (dropped < 2) {
+      dropped += 1;
+      await page.waitForTimeout(800);
+      return route.abort('internetdisconnected');
+    }
+    return route.continue();
+  });
+  await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
+  await fillBuyer(page);
+  await page.getByRole('button', { name: /Continue to Payment/ }).click();
+
+  const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
+  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
+  await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
+  await stripe.getByPlaceholder('CVC').fill('123');
+  await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+  await page.getByRole('button', { name: /Complete Payment/ }).click();
+
+  await expect(page.getByText('Confirming your order...')).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText('Network Error')).toHaveCount(0);
+  await expect(page.getByText('Payment Successful!')).toBeVisible({ timeout: 45_000 });
+  expect(dropped).toBe(2);
+});
+
 // A FamilyPack stores the pack price ($50 admits 3, does NOT divide evenly).
 test('buying one $50 pack of 3 on a general-admission event issues 3 tickets, one $50 invoice and one pack tag', async ({ page }) => {
   const seed = readSeed();
