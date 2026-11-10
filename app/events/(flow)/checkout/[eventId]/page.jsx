@@ -874,6 +874,32 @@ const CheckoutPage = () => {
     );
   }
 
+  // Order didn't go through (feature 1015): the hold was released, nothing charged. Shown on its own
+  // like the success screen - no order summary, steps or Back, since there is no order any more.
+  if (notChargedMessage) {
+    return (
+      <div>
+        <div className="max-w-lg lg:max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center" data-testid="not-charged">
+            <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl lg:text-6xl text-amber-500 mb-3 sm:mb-4 lg:mb-6" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mb-2 sm:mb-3 lg:mb-4">
+              Sorry, your order didn&apos;t go through
+            </h1>
+            <p className="text-sm sm:text-base lg:text-lg text-slate-600 mb-4 sm:mb-6">
+              {notChargedMessage}
+            </p>
+            <button
+              onClick={() => router.push(`/events/views/${params.eventId}`)}
+              className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
+            >
+              Back to event
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Success Step - Mobile-first optimized
   if (currentStep === 'complete' || (paymentStatus?.status === 'succeeded' && isPaymentSuccessful)) {
     return (
@@ -1366,23 +1392,7 @@ const CheckoutPage = () => {
                       Payment Details
                     </h2>
                     
-                    {notChargedMessage ? (
-                      <div className="text-center py-6 sm:py-8" data-testid="not-charged">
-                        <FaExclamationTriangle className="mx-auto text-4xl sm:text-5xl text-amber-500 mb-3 sm:mb-4" />
-                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
-                          Sorry, your order didn&apos;t go through
-                        </h3>
-                        <p className="text-slate-600 text-sm sm:text-base mb-4 sm:mb-6 max-w-md mx-auto">
-                          {notChargedMessage}
-                        </p>
-                        <button
-                          onClick={() => router.push(`/events/views/${params.eventId}`)}
-                          className="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base"
-                        >
-                          Back to event
-                        </button>
-                      </div>
-                    ) : confirmStage === 'waiting' ? (
+                    {confirmStage === 'waiting' ? (
                       // No answer from the server for a minute after the card was approved. The page
                       // keeps checking and flips to the result by itself; the card form stays hidden.
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 text-sm text-amber-800 space-y-2" data-testid="confirm-waiting">
