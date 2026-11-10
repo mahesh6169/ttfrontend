@@ -882,8 +882,9 @@ const CheckoutPage = () => {
   // like the success screen - no order summary, steps or Back, since there is no order any more.
   if (notChargedMessage) {
     return (
-      <div>
-        <div className="max-w-lg lg:max-w-2xl mx-auto">
+      // Centred in the space under the top menu; on a short phone screen it just sits near the top.
+      <div className="min-h-[calc(100dvh-12rem)] flex items-center justify-center py-6">
+        <div className="w-full max-w-lg lg:max-w-2xl mx-auto">
           {/* Type scale (Material Design): Title Large -> 18/20px, Body Large 16px, Label Large 14px. */}
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:p-8 text-center" data-testid="not-charged">
             <FaExclamationTriangle className="mx-auto text-4xl text-amber-500 mb-3 sm:mb-4" />
