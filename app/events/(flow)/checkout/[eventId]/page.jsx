@@ -173,6 +173,9 @@ const CheckoutPage = () => {
           setFormResponses(JSON.parse(storedFormResponses));
         }
       } else {
+        // Once the card is approved the hold is closed by the server on purpose (order made or
+        // released) - the page then shows the order's result and must not send the buyer away.
+        if (hasConfirmedRef.current) return;
         // No reservation found
         setErrors({ general: 'No active reservation found. Please select tickets first.' });
         setTimeout(() => {
@@ -181,6 +184,7 @@ const CheckoutPage = () => {
       }
     } catch (error) {
       if (error.response?.status === 404) {
+        if (hasConfirmedRef.current) return; // card approved: see above
         setErrors({ general: 'No active reservation found. Please select tickets first.' });
         setTimeout(() => {
           router.push(`/events/tickets/${params.eventId}`);
