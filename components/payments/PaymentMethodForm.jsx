@@ -185,8 +185,12 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
               <span className="ml-2 text-xs text-slate-600">AU Visa</span>
             </div>
             <div className="flex items-center">
-              <span className="font-mono text-xs">5555 5536 0000 0008</span>
-              <span className="ml-2 text-xs text-slate-600">AU Mastercard</span>
+              <span className="font-mono text-xs">4000 0503 6000 0001</span>
+              <span className="ml-2 text-xs text-slate-600">AU debit Visa (eftpos)</span>
+            </div>
+            <div className="flex items-center">
+              <span className="font-mono text-xs">5555 0503 6000 0080</span>
+              <span className="ml-2 text-xs text-slate-600">AU debit Mastercard (eftpos)</span>
             </div>
             <div className="flex items-center text-red-600">
               <span className="font-mono text-xs">4242 4242 4242 4242</span>
