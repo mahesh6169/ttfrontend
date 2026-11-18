@@ -1436,6 +1436,7 @@ const CheckoutPage = () => {
                         <StripePaymentForm
                           key={`stripe-form-${paymentStatus.amount}`}
                           clientSecret={paymentStatus.clientSecret}
+                          eventId={params.eventId}
                           onSuccess={handlePaymentSuccess}
                           onError={(error) => setErrors({ payment: error.message })}
                           totalAmount={paymentStatus.amount}

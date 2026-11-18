@@ -964,6 +964,12 @@ const SingleEventCard = ({ event, chatProps, statusBadge = null, mobileExtra = n
                         Purchase Tickets
                       </button>
                     )}
+                    {/* Feature 1016: only Australian-issued Visa / Mastercard / Amex can pay. */}
+                    {!salesClosed && !showWaitlist && (
+                      <p className="mt-1.5 text-xs text-slate-500" data-testid="australian-cards-only">
+                        Australian cards only
+                      </p>
+                    )}
                   </div>
                   {/* Availability + Order Limit (mobile: right; desktop: on top) */}
                   <div className="order-2 lg:order-1 min-w-0">

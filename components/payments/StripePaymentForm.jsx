@@ -3,13 +3,14 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
-import PaymentMethodForm from './PaymentMethodForm';
+import PaymentMethodForm, { CARD_NOT_ACCEPTED_MESSAGE } from './PaymentMethodForm';
 import { FaSpinner, FaLock, FaExclamationTriangle } from 'react-icons/fa';
 
 // Initialize Stripe outside component to avoid re-creating on each render
@@ -17,6 +18,7 @@ import { FaSpinner, FaLock, FaExclamationTriangle } from 'react-icons/fa';
 
 const PaymentForm = ({ 
   clientSecret, 
+  eventId,
   buyerInfo, 
   totalAmount,
   onSuccess, 
@@ -39,7 +41,7 @@ const PaymentForm = ({
     }
 
     if (!isCardValid) {
-      setPaymentError('Please enter a valid Visa or Mastercard to continue.');
+      setPaymentError('Please enter a valid Australian Visa, Mastercard or Amex to continue.');
       return;
     }
 
@@ -47,17 +49,47 @@ const PaymentForm = ({
     setPaymentError(null);
 
     try {
+      // Feature 1016: make the card on Stripe first and ask our server whether it is an
+      // Australian Visa / Mastercard / Amex. Only then does Stripe hold any money. A refused
+      // card keeps the buyer on this form to try another one.
+      const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: elements.getElement('card'),
+        billing_details: {
+          name: `${buyerInfo.firstName} ${buyerInfo.lastName}`,
+          email: buyerInfo.email,
+          phone: buyerInfo.phone,
+        },
+      });
+      if (cardError) {
+        setPaymentError(cardError.type === 'card_error' || cardError.type === 'validation_error'
+          ? cardError.message
+          : 'Please check your card details and try again.');
+        return;
+      }
+
+      let check;
+      try {
+        check = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/paid/check-card`,
+          { paymentIntentId: clientSecret.split('_secret_')[0], paymentMethodId: paymentMethod.id },
+          { withCredentials: true }
+        );
+      } catch (checkError) {
+        setPaymentError(checkError.response?.data?.message && checkError.response.status === 400
+          ? checkError.response.data.message
+          : 'We could not check your card just now. Please try again.');
+        return;
+      }
+      if (!check.data?.accepted) {
+        setPaymentError(check.data?.message || CARD_NOT_ACCEPTED_MESSAGE);
+        return;
+      }
+
       console.log('🚀 Starting Stripe payment confirmation...');
 
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement('card'),
-          billing_details: {
-            name: `${buyerInfo.firstName} ${buyerInfo.lastName}`,
-            email: buyerInfo.email,
-            phone: buyerInfo.phone,
-          },
-        },
+        payment_method: paymentMethod.id,
       });
 
       if (error) {
@@ -174,6 +206,7 @@ const PaymentForm = ({
 
 const StripePaymentForm = ({ 
   clientSecret,
+  eventId,
   stripeAccountId, 
   buyerInfo, 
   totalAmount,
@@ -221,6 +254,7 @@ const StripePaymentForm = ({
     <Elements stripe={stripePromise} options={options}>
       <PaymentForm
         clientSecret={clientSecret}
+        eventId={eventId}
         buyerInfo={buyerInfo}
         totalAmount={totalAmount}
         onSuccess={onSuccess}
