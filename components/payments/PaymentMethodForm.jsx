@@ -12,14 +12,24 @@ import {
   FaCreditCard, 
   FaLock, 
   FaCheckCircle,
-  FaExclamationCircle 
+  FaExclamationCircle,
+  FaSpinner
 } from 'react-icons/fa';
 import { 
   SiVisa, 
-  SiMastercard 
+  SiMastercard,
+  SiAmericanexpress
 } from 'react-icons/si';
 
-const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
+// Feature 1016: Australian-issued Visa, Mastercard or Amex only. The brand is checked here while
+// typing; the issuing country is checked by the server when Pay is clicked (check-card).
+export const ACCEPTED_CARD_BRANDS = ['visa', 'mastercard', 'amex'];
+export const CARD_NOT_ACCEPTED_MESSAGE =
+  'Sorry, we only accept Australian-issued Visa, Mastercard or Amex. Please try another card.';
+
+// cardCheckState (feature 1016): the Australian-card check that runs once the card is fully typed
+// (idle | checking | ok | refused | error) - drives the line under the card box.
+const PaymentMethodForm = ({ disabled = false, onValidationChange, cardCheckState = 'idle' }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
@@ -57,12 +67,11 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
     // Update card brand
     setCardBrand(event.brand || null);
     
-    // Define accepted card brands
-    const acceptedCards = ['visa', 'mastercard'];
+    const acceptedCards = ACCEPTED_CARD_BRANDS;
     
-    // Check if card brand is accepted
-    if (event.brand && !acceptedCards.includes(event.brand)) {
-      setCardError('Sorry, we only accept Visa and Mastercard from Australian banks');
+    // Check if card brand is accepted ('unknown' = not enough digits typed yet)
+    if (event.brand && event.brand !== 'unknown' && !acceptedCards.includes(event.brand)) {
+      setCardError(CARD_NOT_ACCEPTED_MESSAGE);
       setCardComplete(false);
       if (onValidationChange) {
         onValidationChange(false, 'invalid_card_brand');
@@ -70,7 +79,7 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
       return;
     }
     
-    // For accepted cards (Visa/Mastercard)
+    // For accepted cards (Visa/Mastercard/Amex)
     if (event.brand && acceptedCards.includes(event.brand) && event.complete) {
       setCardError(null);
       if (onValidationChange) {
@@ -106,10 +115,11 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
     <div className="space-y-3 sm:space-y-4">
       {/* Accepted Cards */}
       <div className="flex items-center space-x-2 text-sm text-slate-600">
-        <span>Accepted cards (Australian only):</span>
-        <div className="flex items-center space-x-2">
+        <span>Accepted: Australian Visa, Mastercard or Amex</span>
+        <div className="flex items-center space-x-2" aria-hidden="true">
           <SiVisa className="text-2xl text-[#1A1F71]" />
           <SiMastercard className="text-2xl text-[#EB001B]" />
+          <SiAmericanexpress className="text-2xl text-[#2E77BC]" />
         </div>
       </div>
 
@@ -159,8 +169,14 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
           </p>
         )}
 
-        {/* Card Success Message */}
-        {cardComplete && !cardError && (
+        {/* Card status: checking the card, then valid (refused / error shows in the Payment Error box) */}
+        {cardComplete && !cardError && cardCheckState === 'checking' && (
+          <p className="text-xs text-slate-600 flex items-center" data-testid="card-checking">
+            <FaSpinner className="mr-1 w-4 h-4 animate-spin" />
+            Checking your card...
+          </p>
+        )}
+        {cardComplete && !cardError && (cardCheckState === 'ok' || cardCheckState === 'idle') && (
           <p className="text-xs text-teal-600 flex items-center">
             <FaCheckCircle className="mr-1 w-4 h-4" />
             Card details are valid
@@ -178,16 +194,28 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
               <span className="ml-2 text-xs text-slate-600">AU Visa</span>
             </div>
             <div className="flex items-center">
-              <span className="font-mono text-xs">5555 5536 0000 0008</span>
-              <span className="ml-2 text-xs text-slate-600">AU Mastercard</span>
+              <span className="font-mono text-xs">4000 0503 6000 0001</span>
+              <span className="ml-2 text-xs text-slate-600">AU debit Visa (eftpos)</span>
+            </div>
+            <div className="flex items-center">
+              <span className="font-mono text-xs">5555 0503 6000 0080</span>
+              <span className="ml-2 text-xs text-slate-600">AU debit Mastercard (eftpos)</span>
             </div>
             <div className="flex items-center text-red-600">
-              <span className="font-mono text-xs line-through opacity-50">3782 822463 10005</span>
-              <span className="ml-2 text-xs">AMEX (Not Accepted)</span>
+              <span className="font-mono text-xs">4242 4242 4242 4242</span>
+              <span className="ml-2 text-xs">US Visa (refused at Pay)</span>
+            </div>
+            <div className="flex items-center text-red-600">
+              <span className="font-mono text-xs">3782 822463 10005</span>
+              <span className="ml-2 text-xs">US Amex (accepted while typing, refused at Pay)</span>
+            </div>
+            <div className="flex items-center text-red-600">
+              <span className="font-mono text-xs">6011 1111 1111 1117</span>
+              <span className="ml-2 text-xs">Discover (refused while typing)</span>
             </div>
           </div>
           <p className="text-xs text-slate-600 mt-2">
-            Use any future date and 3-digit CVC. International cards will be rejected.
+            Use any future date and any CVC (4 digits for Amex). Overseas cards are refused.
           </p>
         </div>
       )}

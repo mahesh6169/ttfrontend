@@ -1,10 +1,10 @@
 // The two-step checkout (Details -> Payment): stepper, discount codes, buyer gating, order summary,
-// terms & conditions, and real end-to-end purchases with Stripe's 4242 test card (zero real money),
+// terms & conditions, and real end-to-end purchases with Stripe's Australian test Visa (zero real money),
 // verified in the test DB. Runs as the member.
 import { test, expect } from '@playwright/test';
 import {
   readSeed, dbCount, dbEditFlags, dbTicketPrices, dbInvoiceTotal, dbSold, dbPackTags,
-  clearReservation, gotoCheckoutNonSeated, fillBuyer, payWith4242,
+  clearReservation, gotoCheckoutNonSeated, fillBuyer, payWithAustralianCard, fillCard, TEST_CARDS,
 } from '../helpers.js';
 
 test.use({ storageState: 'e2e/.auth/member.json' });
@@ -86,13 +86,13 @@ test('the order summary lists the chosen seats as chips with the total', async (
   await expect(summary.getByTestId('order-summary-total')).toBeVisible();
 });
 
-test('a member buys a paid ticket end to end with the 4242 test card and the sale is recorded', async ({ page }) => {
+test('a member buys a paid ticket end to end with the Australian test card and the sale is recorded', async ({ page }) => {
   const seed = readSeed();
   await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
 
   await fillBuyer(page);
   await page.getByRole('button', { name: /Continue to Payment/ }).click();
-  await payWith4242(page);
+  await payWithAustralianCard(page);
 
   expect(dbCount('paidTickets', seed.paidEventId)).toBeGreaterThanOrEqual(1);
   expect(dbCount('invoices', seed.paidEventId)).toBeGreaterThanOrEqual(1);
@@ -124,11 +124,7 @@ test('when the tickets go while paying, the buyer is told the order did not go t
   await fillBuyer(page);
   await page.getByRole('button', { name: /Continue to Payment/ }).click();
 
-  const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
-  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
-  await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
-  await stripe.getByPlaceholder('CVC').fill('123');
-  await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+  await fillCard(page);
   await page.getByRole('button', { name: /Complete Payment/ }).click();
 
   const panel = page.getByTestId('not-charged');
@@ -157,11 +153,7 @@ test('a dropped connection after paying shows Confirming your order, then the no
   await fillBuyer(page);
   await page.getByRole('button', { name: /Continue to Payment/ }).click();
 
-  const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
-  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
-  await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
-  await stripe.getByPlaceholder('CVC').fill('123');
-  await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+  await fillCard(page);
   await page.getByRole('button', { name: /Complete Payment/ }).click();
 
   await expect(page.getByText('Confirming your order...')).toBeVisible({ timeout: 45_000 });
@@ -191,7 +183,7 @@ test('buying one $50 pack of 3 on a general-admission event issues 3 tickets, on
 
   await fillBuyer(page, 'buyer-pack-e2e@test.dev');
   await page.getByRole('button', { name: /Continue to Payment/ }).click();
-  await payWith4242(page);
+  await payWithAustralianCard(page);
 
   // 3 tickets whose stored prices sum to exactly $50 (16.67 + 16.67 + 16.66).
   expect(dbCount('paidTickets', seed.packPricingEventId)).toBe(3);
@@ -236,7 +228,7 @@ test('buying one pack of 3 on a seated event demands exactly 3 seats and issues 
 
   await fillBuyer(page, 'buyer-pack-e2e@test.dev');
   await page.getByRole('button', { name: /Continue to Payment/ }).click();
-  await payWith4242(page);
+  await payWithAustralianCard(page);
 
   // 3 seated tickets summing to $50, one $50 invoice, all sharing one pack tag.
   expect(dbCount('paidTickets', seed.packPricingSeatedEventId)).toBe(3);
@@ -270,4 +262,51 @@ test('checkout shows the organiser terms after the refund policy when set, and n
   await expect(page.getByText('Terms & Conditions:')).toHaveCount(0);
   // The platform terms checkbox (with its "Terms" link) is still there - that acceptance is unchanged.
   await expect(page.getByRole('link', { name: 'Terms' })).toBeVisible();
+});
+
+// Feature 1016: only Australian-issued Visa, Mastercard or Amex can pay. The brand is refused while
+// typing; the country is checked by the server as soon as the card is fully typed (and again at
+// Pay), before Stripe holds any money, so Complete Payment stays off for an overseas card.
+test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
+  const REFUSED = 'Sorry, we only accept Australian-issued Visa, Mastercard or Amex. Please try another card.';
+
+  test('a paid event page says Australian cards only next to Purchase Tickets', async ({ page }) => {
+    const seed = readSeed();
+    await page.goto(`/events/views/${seed.paidEventId}`);
+    await expect(page.getByRole('button', { name: 'Purchase Tickets' }).first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId('australian-cards-only').first()).toHaveText('Australian cards only');
+  });
+
+  test('a Discover card is refused while typing and Pay stays off', async ({ page }) => {
+    const seed = readSeed();
+    await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
+    await fillBuyer(page);
+    await page.getByRole('button', { name: /Continue to Payment/ }).click();
+    await expect(page.getByText('Accepted: Australian Visa, Mastercard or Amex')).toBeVisible({ timeout: 20_000 });
+
+    await fillCard(page, TEST_CARDS.discover);
+    await expect(page.getByText(REFUSED)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
+  });
+
+  test('an overseas Visa is refused as soon as it is typed, Pay stays off and the box empties, then an Australian Visa on the same screen buys the ticket', async ({ page }) => {
+    const seed = readSeed();
+    const before = dbCount('paidTickets', seed.paidEventId);
+    await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
+    await fillBuyer(page);
+    await page.getByRole('button', { name: /Continue to Payment/ }).click();
+
+    await fillCard(page, TEST_CARDS.usVisa);
+    await expect(page.getByText(REFUSED)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
+    // The refused card is wiped from the box; the message stays until a new card is in.
+    const stripeFrame = page.frameLocator('iframe[title="Secure card payment input frame"]');
+    await expect(stripeFrame.getByPlaceholder('Card number')).toHaveValue('');
+    await expect(page.getByText(REFUSED)).toBeVisible();
+    await expect(page.getByText('Payment Successful!')).toHaveCount(0);
+    expect(dbCount('paidTickets', seed.paidEventId)).toBe(before);
+
+    await payWithAustralianCard(page);
+    expect(dbCount('paidTickets', seed.paidEventId)).toBe(before + 1);
+  });
 });

@@ -141,15 +141,26 @@ export async function fillBuyer(page, email = 'buyer-e2e@test.dev') {
   }
 }
 
-// On the checkout Payment step: fill Stripe's 4242 test card (single CardElement iframe), pay, and
-// wait for the success screen.
-export async function payWith4242(page) {
+// Stripe test cards (zero real money). Feature 1016: only Australian-issued Visa / Mastercard / Amex
+// can pay, so purchases use Stripe's Australian test Visa; 4242 is Stripe's US Visa (refused at Pay).
+export const TEST_CARDS = {
+  australianVisa: '4000 0003 6000 0006',
+  usVisa: '4242 4242 4242 4242',
+  discover: '6011 1111 1111 1117',
+};
+
+// On the checkout Payment step: type a card into Stripe's single CardElement iframe (no Pay click).
+export async function fillCard(page, number = TEST_CARDS.australianVisa) {
   const stripe = page.frameLocator('iframe[title="Secure card payment input frame"]');
-  await stripe.getByPlaceholder('Card number').fill('4242 4242 4242 4242');
+  await stripe.getByPlaceholder('Card number').fill(number);
   await stripe.getByPlaceholder('MM / YY').fill('12 / 34');
   await stripe.getByPlaceholder('CVC').fill('123');
   await stripe.getByPlaceholder(/ZIP|Postal/).fill('2000').catch(() => {});
+}
 
+// On the checkout Payment step: pay with Stripe's Australian test Visa and wait for the success screen.
+export async function payWithAustralianCard(page) {
+  await fillCard(page, TEST_CARDS.australianVisa);
   await page.getByRole('button', { name: /Complete Payment/ }).click();
   await expect(page.getByText('Payment Successful!')).toBeVisible({ timeout: 45_000 });
 }
