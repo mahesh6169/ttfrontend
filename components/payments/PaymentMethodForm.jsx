@@ -12,7 +12,8 @@ import {
   FaCreditCard, 
   FaLock, 
   FaCheckCircle,
-  FaExclamationCircle 
+  FaExclamationCircle,
+  FaSpinner
 } from 'react-icons/fa';
 import { 
   SiVisa, 
@@ -26,7 +27,9 @@ export const ACCEPTED_CARD_BRANDS = ['visa', 'mastercard', 'amex'];
 export const CARD_NOT_ACCEPTED_MESSAGE =
   'Sorry, we only accept Australian-issued Visa, Mastercard or Amex. Please try another card.';
 
-const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
+// cardCheckState (feature 1016): the Australian-card check that runs once the card is fully typed
+// (idle | checking | ok | refused | error) - drives the line under the card box.
+const PaymentMethodForm = ({ disabled = false, onValidationChange, cardCheckState = 'idle' }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
@@ -166,8 +169,14 @@ const PaymentMethodForm = ({ disabled = false, onValidationChange }) => {
           </p>
         )}
 
-        {/* Card Success Message */}
-        {cardComplete && !cardError && (
+        {/* Card status: checking the card, then valid (refused / error shows in the Payment Error box) */}
+        {cardComplete && !cardError && cardCheckState === 'checking' && (
+          <p className="text-xs text-slate-600 flex items-center" data-testid="card-checking">
+            <FaSpinner className="mr-1 w-4 h-4 animate-spin" />
+            Checking your card...
+          </p>
+        )}
+        {cardComplete && !cardError && (cardCheckState === 'ok' || cardCheckState === 'idle') && (
           <p className="text-xs text-teal-600 flex items-center">
             <FaCheckCircle className="mr-1 w-4 h-4" />
             Card details are valid

@@ -265,7 +265,8 @@ test('checkout shows the organiser terms after the refund policy when set, and n
 });
 
 // Feature 1016: only Australian-issued Visa, Mastercard or Amex can pay. The brand is refused while
-// typing; the country is checked by the server at Pay, before Stripe holds any money.
+// typing; the country is checked by the server as soon as the card is fully typed (and again at
+// Pay), before Stripe holds any money, so Complete Payment stays off for an overseas card.
 test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
   const REFUSED = 'Sorry, we only accept Australian-issued Visa, Mastercard or Amex. Please try another card.';
 
@@ -288,7 +289,7 @@ test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
     await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
   });
 
-  test('an overseas Visa is refused at Pay with nothing charged, then an Australian Visa on the same screen buys the ticket', async ({ page }) => {
+  test('an overseas Visa is refused as soon as it is typed and Pay stays off, then an Australian Visa on the same screen buys the ticket', async ({ page }) => {
     const seed = readSeed();
     const before = dbCount('paidTickets', seed.paidEventId);
     await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
@@ -296,8 +297,8 @@ test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
     await page.getByRole('button', { name: /Continue to Payment/ }).click();
 
     await fillCard(page, TEST_CARDS.usVisa);
-    await page.getByRole('button', { name: /Complete Payment/ }).click();
     await expect(page.getByText(REFUSED)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
     await expect(page.getByText('Payment Successful!')).toHaveCount(0);
     expect(dbCount('paidTickets', seed.paidEventId)).toBe(before);
 

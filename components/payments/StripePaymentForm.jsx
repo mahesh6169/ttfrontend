@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import axios from '@/utils/axiosConfig';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -31,6 +31,80 @@ const PaymentForm = ({
   const [paymentError, setPaymentError] = useState(null);
   const [isCardValid, setIsCardValid] = useState(false);
   const [cardValidationError, setCardValidationError] = useState(null);
+  // Feature 1016: the card is checked (Australian Visa / Mastercard / Amex) as soon as it is fully
+  // typed, so Complete Payment never lights up for an overseas card. state: idle | checking | ok |
+  // refused | error. checkSeq drops the answer of a check the buyer has typed past.
+  const [cardCheck, setCardCheck] = useState({ state: 'idle', paymentMethodId: null });
+  const checkSeq = useRef(0);
+
+  // Make the card on Stripe and ask our server whether it is accepted. Holds no money.
+  const checkTheCard = async () => {
+    const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: elements.getElement('card'),
+      billing_details: {
+        name: `${buyerInfo.firstName} ${buyerInfo.lastName}`,
+        email: buyerInfo.email,
+        phone: buyerInfo.phone,
+      },
+    });
+    if (cardError) {
+      return {
+        ok: false,
+        message: cardError.type === 'card_error' || cardError.type === 'validation_error'
+          ? cardError.message
+          : 'Please check your card details and try again.',
+      };
+    }
+    let check;
+    try {
+      check = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/paid/check-card`,
+        { paymentIntentId: clientSecret.split('_secret_')[0], paymentMethodId: paymentMethod.id },
+        { withCredentials: true }
+      );
+    } catch (checkError) {
+      return {
+        ok: false,
+        message: checkError.response?.status === 400 && checkError.response?.data?.message
+          ? checkError.response.data.message
+          : 'We could not check your card just now. Please try again.',
+      };
+    }
+    if (!check.data?.accepted) {
+      return { ok: false, refused: true, message: check.data?.message || CARD_NOT_ACCEPTED_MESSAGE };
+    }
+    return { ok: true, paymentMethodId: paymentMethod.id };
+  };
+
+  const runEarlyCheck = async () => {
+    if (!stripe || !elements || !clientSecret) return;
+    const seq = ++checkSeq.current;
+    setCardCheck({ state: 'checking', paymentMethodId: null });
+    let result;
+    try {
+      result = await checkTheCard();
+    } catch {
+      result = { ok: false, message: 'We could not check your card just now. Please try again.' };
+    }
+    if (seq !== checkSeq.current) return; // the card changed meanwhile
+    if (result.ok) {
+      setCardCheck({ state: 'ok', paymentMethodId: result.paymentMethodId });
+      setPaymentError(null);
+    } else {
+      setCardCheck({ state: result.refused ? 'refused' : 'error', paymentMethodId: null });
+      setPaymentError(result.message);
+    }
+  };
+
+  const handleCardValidation = (valid, errorType) => {
+    setIsCardValid(valid);
+    setCardValidationError(errorType);
+    checkSeq.current += 1; // any edit makes an earlier check stale
+    setPaymentError(null);
+    if (valid) runEarlyCheck();
+    else setCardCheck({ state: 'idle', paymentMethodId: null });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -40,8 +114,8 @@ const PaymentForm = ({
       return;
     }
 
-    if (!isCardValid) {
-      setPaymentError('Please enter a valid Australian Visa, Mastercard or Amex to continue.');
+    if (!isCardValid || cardCheck.state === 'refused' || cardCheck.state === 'checking') {
+      if (!isCardValid) setPaymentError('Please enter a valid Australian Visa, Mastercard or Amex to continue.');
       return;
     }
 
@@ -49,51 +123,29 @@ const PaymentForm = ({
     setPaymentError(null);
 
     try {
-      // Feature 1016: make the card on Stripe first and ask our server whether it is an
-      // Australian Visa / Mastercard / Amex. Only then does Stripe hold any money. A refused
-      // card keeps the buyer on this form to try another one.
-      const { error: cardError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: elements.getElement('card'),
-        billing_details: {
-          name: `${buyerInfo.firstName} ${buyerInfo.lastName}`,
-          email: buyerInfo.email,
-          phone: buyerInfo.phone,
-        },
-      });
-      if (cardError) {
-        setPaymentError(cardError.type === 'card_error' || cardError.type === 'validation_error'
-          ? cardError.message
-          : 'Please check your card details and try again.');
-        return;
-      }
-
-      let check;
-      try {
-        check = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${eventId}/paid/check-card`,
-          { paymentIntentId: clientSecret.split('_secret_')[0], paymentMethodId: paymentMethod.id },
-          { withCredentials: true }
-        );
-      } catch (checkError) {
-        setPaymentError(checkError.response?.data?.message && checkError.response.status === 400
-          ? checkError.response.data.message
-          : 'We could not check your card just now. Please try again.');
-        return;
-      }
-      if (!check.data?.accepted) {
-        setPaymentError(check.data?.message || CARD_NOT_ACCEPTED_MESSAGE);
-        return;
+      // Use the card already checked while typing; otherwise (that check failed to run) check it
+      // now. Only an accepted card goes on to Stripe, so no money is ever held for a refused one.
+      let paymentMethodId = cardCheck.state === 'ok' ? cardCheck.paymentMethodId : null;
+      if (!paymentMethodId) {
+        const result = await checkTheCard();
+        if (!result.ok) {
+          setCardCheck({ state: result.refused ? 'refused' : 'error', paymentMethodId: null });
+          setPaymentError(result.message);
+          return;
+        }
+        paymentMethodId = result.paymentMethodId;
       }
 
       console.log('🚀 Starting Stripe payment confirmation...');
 
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethod.id,
+        payment_method: paymentMethodId,
       });
 
       if (error) {
         console.error('❌ Stripe payment error:', error);
+        // A declined card cannot be reused: the next Pay makes and checks it again.
+        setCardCheck({ state: 'idle', paymentMethodId: null });
         
         // Handle specific Stripe error types
         let errorMessage = 'Payment failed. Please try again.';
@@ -144,16 +196,16 @@ const PaymentForm = ({
     }
   };
 
+  const cardBlocked = cardCheck.state === 'checking' || cardCheck.state === 'refused';
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Payment Method Section */}
       <PaymentMethodForm 
         disabled={isProcessing || disabled}
         onReady={() => setPaymentError(null)}
-        onValidationChange={(valid, errorType) => {
-          setIsCardValid(valid);
-          setCardValidationError(errorType);
-        }}
+        onValidationChange={handleCardValidation}
+        cardCheckState={cardCheck.state}
       />
 
       {/* Error Display */}
@@ -174,9 +226,9 @@ const PaymentForm = ({
       <div className="flex justify-center">
       <button
         type="submit"
-        disabled={!stripe || isProcessing || disabled || !isCardValid}
+        disabled={!stripe || isProcessing || disabled || !isCardValid || cardBlocked}
         className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm text-white transition-colors ${
-          isProcessing || disabled || !isCardValid
+          isProcessing || disabled || !isCardValid || cardBlocked
             ? 'bg-teal-700 opacity-50 cursor-not-allowed'
             : 'bg-teal-700 hover:bg-teal-800'
         }`}
