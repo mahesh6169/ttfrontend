@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import axios from 'axios';
+import axios from '@/utils/axiosConfig';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
