@@ -289,7 +289,7 @@ test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
     await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
   });
 
-  test('an overseas Visa is refused as soon as it is typed and Pay stays off, then an Australian Visa on the same screen buys the ticket', async ({ page }) => {
+  test('an overseas Visa is refused as soon as it is typed, Pay stays off and the box empties, then an Australian Visa on the same screen buys the ticket', async ({ page }) => {
     const seed = readSeed();
     const before = dbCount('paidTickets', seed.paidEventId);
     await gotoCheckoutNonSeated(page, seed.paidEventId, 1);
@@ -299,6 +299,10 @@ test.describe('only Australian Visa, Mastercard or Amex cards can pay', () => {
     await fillCard(page, TEST_CARDS.usVisa);
     await expect(page.getByText(REFUSED)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole('button', { name: /Complete Payment/ })).toBeDisabled();
+    // The refused card is wiped from the box; the message stays until a new card is in.
+    const stripeFrame = page.frameLocator('iframe[title="Secure card payment input frame"]');
+    await expect(stripeFrame.getByPlaceholder('Card number')).toHaveValue('');
+    await expect(page.getByText(REFUSED)).toBeVisible();
     await expect(page.getByText('Payment Successful!')).toHaveCount(0);
     expect(dbCount('paidTickets', seed.paidEventId)).toBe(before);
 

@@ -94,16 +94,27 @@ const PaymentForm = ({
     } else {
       setCardCheck({ state: result.refused ? 'refused' : 'error', paymentMethodId: null });
       setPaymentError(result.message);
+      if (result.refused) clearRefusedCard();
     }
+  };
+
+  // A refused card is wiped from the box, so the next card is always typed (or pasted) fresh and
+  // checked again - Stripe sends no change when one complete card is swapped for another.
+  // The refusal message stays until a new complete card is in.
+  const clearRefusedCard = () => {
+    elements?.getElement('card')?.clear();
   };
 
   const handleCardValidation = (valid, errorType) => {
     setIsCardValid(valid);
     setCardValidationError(errorType);
     checkSeq.current += 1; // any edit makes an earlier check stale
-    setPaymentError(null);
-    if (valid) runEarlyCheck();
-    else setCardCheck({ state: 'idle', paymentMethodId: null });
+    if (valid) {
+      setPaymentError(null);
+      runEarlyCheck();
+    } else {
+      setCardCheck({ state: 'idle', paymentMethodId: null });
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -131,6 +142,7 @@ const PaymentForm = ({
         if (!result.ok) {
           setCardCheck({ state: result.refused ? 'refused' : 'error', paymentMethodId: null });
           setPaymentError(result.message);
+          if (result.refused) clearRefusedCard();
           return;
         }
         paymentMethodId = result.paymentMethodId;
